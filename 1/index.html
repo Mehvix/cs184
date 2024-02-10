@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <!-- Default Required Resources -->
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=569,maximum-scale=1" />
+    <link rel="alternate" type="application/rss+xml" title="Blog RSS" href="//mehvix.com/posts/rss.xml" />
+    <link href="//mehvix.com/static/css/style.css" type="text/css" rel="stylesheet" />
+    <script src="//mehvix.com/static/js/include.js"></script>
+
+    <!-- HLJS (remove if not used) -->
+    <!-- https://cdnjs.com/libraries/highlight.js -->
+    <!-- <link type="text/css" rel="stylesheet" href="/static/css/atom-one-dark.css" />
+    <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/highlight.min.js" integrity="sha512-MinqHeqca99q5bWxFNQEQpplMBFiUNrEwuuDj2rCSh1DgeeTXUgvgYIHZ1puBS9IKBkdfLMSk/ZWVDasa3Y/2A==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script>
+    hljs.highlightAll()
+    </script> -->
+
+    <!-- MathJax (remove if not used) -->
+    <script type="text/javascript" id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>
+        MathJax = {
+            tex: {
+                inlineMath: [
+                    ["$", "$"],
+                    ["\\(", "\\)"],
+                ],
+            },
+            svg: {
+                fontCache: "global"
+            },
+            loader: {
+                load: ["input/tex", "output/svg"]
+            },
+        };
+    </script>
+
+    <title>Mehvix | CS184 | Rasterizer</title>
+    <style>
+        :root {
+            --outside-bg-color: #1b63e9;
+        }
+
+        body {
+            max-width: 75em !important;
+        }
+
+        #footer table td:nth-of-type(2) {
+            max-width: calc(75em - 7ch - 4em - 4em - 1ch);
+        }
+
+        .right {
+            margin: 1em 0 1em 3ch;
+            float: right;
+        }
+
+        .left {
+            margin: 1em 3ch 1em 0;
+            float: left;
+        }
+
+        .vert {
+            display: flex;
+            margin-top: 1em;
+            justify-content: space-between
+        }
+
+        div.row {
+            display: flex;
+            justify-content: space-between;
+            margin: 1em 0;
+            align-items: flex-end;
+            text-align: center;
+        }
+
+        div.row>span {
+            margin-top: 0.5em;
+        }
+
+        div.row>span:not(:first-child) {
+            margin-left: 1.5em;
+        }
+
+    </style>
+</head>
+
+<body>
+    <div class="box">
+        <div class="nav">
+            <a href="//www.mehvix.com/">~</a>/<a href="//cs184.mehvix.com/">CS184</a>/<a href="" class="inverse-bg"></a>Rasterizer</a>
+        </div>
+
+        <article>
+            <div>
+                <h1>Drawing Single-Color Triangles</h1>
+                <p>
+                    <!-- Walk through how you rasterize triangles in your own words. -->
+                    Rasterization involves taking a continuous image (i.e. the shapes encoded in an <code>.svg</code> file) and discretizing them into the pixels (i.e. the squares of a grid<sup>0</sup>). Formally, we will be given the vertices $\left\{(x_1,y_1), (x_2,y_2), (x_3,y_3)\right\}$ and color $\mathcal C:=(r,g,b)$ of a triangle<sup>1</sup>. The task is then to determine which pixels reside inside the triangle, and thus should display $\mathcal C$.
+                    <br>
+
+                    <!-- Explain how your algorithm is no worse than one that checks each sample within the bounding box of the triangle. -->
+                    To accomplish this, the algorithm raster-scans across the $xy$-aligned bounding box of the triangle -- created by floor/ceiling the min/max over the triangle's $x$/$y$ coordinates. For each index in this bounding box, we sample the center of the pixel (offset $\frac{1}{2}$ in both $x$ and $y$) and determine if it is inside the triangle, using vector maths described <a href="https://mathworld.wolfram.com/TriangleInterior.html">here</a>. As this checking operation is constant (not dependent on triangle size), the overall triangle-rasterization algo has a linear time-complexity w.r.t. the triangle's bounding box.
+                    <br>
+                    <!-- Extra credit: Explain any special optimizations you did beyond simple bounding box triangle rasterization, with a timing comparison table (we suggest using the c++ clock() function around the svg.draw() command in DrawRend::redraw() to compare millisecond timings with your various optimizations off and on). -->
+                </p>
+
+                <span class="right" style="width: 40%">
+                    <img src="imgs/1-1.png">
+                </span>
+
+                <div>
+
+                    <!-- Show a png screenshot of basic/test4.svg with the default viewing parameters and with the pixel inspector centered on an interesting part of the scene. -->
+                    These initial results, shown to the right, contain aliasing -- a symptom of discretization, caused by sampling below the <a href="https://en.wikipedia.org/wiki/Nyquist_rate">Nyquist rate</a> characterized by the underlying image. Intuitively, thin slices are like short, high-frequency waves. This can be mitigated by increasing the sampling rate, motivating supersampling.
+                </div>
+
+                ---
+                <p>
+                    <sup>0</sup>: Actually, <a href="http://alvyray.com/Memos/CG/Microsoft/6_pixel.pdf"><i>A Pixel Is</i> Not <i>A Little Square</i></a>.
+                    <br>
+                    <sup>1</sup>: Why triangles? They are the most basic and simple geometric shape-- any polygon can be decomposed into a set of triangles. Additionally, there are many nice mathematical properties that triangles have, such as linear interpolation rules for color and texture coordinates.
+                </p>
+            </div>
+
+            <div>
+                <h1>Antialiasing by Supersampling</h1>
+                <p>
+                    <!-- Walk through your supersampling algorithm and data structures. Why is supersampling useful? What modifications did you make to the rasterization pipeline in the process? Explain how you used supersampling to antialias your triangles. -->
+                    Supersampling curbs aliasing by taking $n^2>1$ samples per pixel. Beforehand, we could write our sampled $\mathcal C$ directly to <code>rgb_framebuffer</code> (think of this as an $h\text{eight} \times w\text{idth}$ array of RGB-values drawn to the screen). But now, as we will be taking $n$ more samples in both the $x$ and $y$ directions, we need a new <code>sample_buffer</code> of size $(n\cdot w)\times(n\cdot h)$ to store the additional factor of $n^2$ samples.
+                    <br>
+                    Now when iterating over the bounding box, we introduce two more $n$-loops to sample a grid of points within the pixel. Now that we are taking more than a single sample, we now offset by $\frac{1}{2n}$ to ensure the grid is centered. Additionally, supersampling breaks the functions to draw points and lines -- we can bodge-patch them by having them dump $n^2$ samples into <code>sample_buffer</code>.
+                    <br>
+                    Last, to resolve our oversized buffer, we simply average the samples in $n^2$-sized chunks and write the result to <code>rgb_framebuffer</code>. This final step is effectively acting as a low-pass filter, specifically, it's as if we're convolving the <code>sample_buffer</code> with an $n \times n$ box filter of values $\frac{1}{n^2}$.
+                </p>
+
+                <!-- Show png screenshots of basic/test4.svg with the default viewing parameters and sample rates 1, 4, and 16 to compare them side-by-side. Position the pixel inspector over an area that showcases the effect dramatically; for example, a very skinny triangle corner. Explain why these results are observed. -->
+                <div class="row">
+                    <span><img src="imgs/2-1.png">
+                        <div>1 sample/pixel</div>
+                    </span>
+                    <span><img src="imgs/2-2.png">
+                        <div>4 samples/pixel</div>
+                    </span>
+                    <span><img src="imgs/2-3.png">
+                        <div>16 samples/pixel</div>
+                    </span>
+                </div>
+
+                <p>
+                    As we can see above, the aliasing is greatly reduced as we increase the sample rate -- we more faithfully represent the underlying image by coloring proportional to the area of the triangle that the pixel covers (which is what our sampling approximates as $\lim n^2 \to\infty$).
+                </p>
+
+                <!-- Extra credit: If you implemented alternative antialiasing methods, describe them and include comparison pictures demonstrating the difference between your method and grid-based supersampling. -->
+            </div>
+
+            <div>
+                <h1>Transforms</h1>
+                <!-- Create an updated version of svg/transforms/robot.svg with cubeman doing something more interesting, like waving or running. Feel free to change his colors or proportions to suit your creativity. Save your svg file as my_robot.svg in your docs/ directory and show a png screenshot of your rendered drawing in your write-up. Explain what you were trying to do with cubeman in words. -->
+                <p>
+                    Implementing transforms allows us to easily create scenes with a hierarchy of objects and relations. Below is my modified cubeman, colored blue and saluting.
+                </p>
+                <div class="row">
+                    <span><img src="imgs/my_robot.svg">
+                        <caption>Raw SVG file</caption>
+                    </span>
+                    <span><img src="imgs/3-1.png">
+                        <caption>Rendered image</caption>
+                    </span>
+                </div>
+            </div>
+
+            <div>
+                <h1>Barycentric coordinates</h1>
+                <p>
+                    <!-- Explain barycentric coordinates in your own words and use an image to aid you in your explanation. One idea is to use a svg file that plots a single triangle with one red, one green, and one blue vertex, which should produce a smoothly blended color triangle. -->
+
+                    <a href="https://en.wikipedia.org/wiki/Barycentric_coordinate_system">Barycentric coordinates</a>--denoted $(\alpha,\beta,\gamma)$--give a way to represent any 2D point as a linear combination of a triangle's 3 vertices.
+                    Formally, given a triangle with vertices
+                    $\left\{(x_1,y_1), (x_2,y_2), (x_3,y_3)\right\}$, we can represent any point $(x,y)$ inside the triangle as $(\alpha,\beta,\gamma) \in [0,1]$ such that $\alpha x_1 + \beta x_2 + \gamma x_3 = x$ and $\alpha y_1 + \beta y_2 + \gamma y_3 = y$.
+                    As we are operating in 2D, we impose the constraint that $\alpha + \beta + \gamma = 1$ to avoid degenerate cases (academics call this <a href="https://mathworld.wolfram.com/HomogeneousBarycentricCoordinates.html">Homogeneous Barycentric Coordinates</a>).
+                    Additionally, under this coordinate system we have another method to check if the point is outside the triangle: if any of the $\alpha,\beta,\gamma$ are negative.
+                    <br>
+                    This framework is useful for many things, such as interpolating color across the triangle. For example, we can create a triangle with vertices colored red, green, and blue. We can then use the corresponding Barycentric coordinates as weights for the colors when interpolating the pixels between the vertices. One feature to notice is the color gradient between vertices changes linearly as barycentric coordinates are <i>linear</i> combinations.
+                </p>
+
+                <!-- Show a png screenshot of svg/basic/test7.svg with default viewing parameters and sample rate 1. If you make any additional images with color gradients, include them. -->
+                <div class="row">
+                    <span><img src="imgs/4-1.png">
+                        <div>Color Triangle</div>
+                    </span>
+                    <span><img src="imgs/4-2.png">
+                        <div>Color Wheel</div>
+                    </span>
+                </div>
+            </div>
+
+            <div>
+                <h1>"Pixel sampling" for texture mapping</h1>
+                <p>
+                    <!-- Explain pixel sampling in your own words and describe how you implemented it to perform texture mapping. Briefly discuss the two different pixel sampling methods, nearest and bilinear. -->
+                    To tackle the task of texturing triangles, we can use pixel sampling: the process of mapping some structure (i.e. composed of triangles) to a a texture map. Formally, we will iterate over the $(x,y)$ coordinates of the triangles' bounding box and will calculate the corresponding $(u,v)$ texture coordinates; in the case of a triangle, this will involve using the barycentric coordinates as weights corresponding to the vertices' texture coordinates. This likely won't produce integer valued $u/v$, so we turn to interpolation:
+                    <br>
+                    The most simple method of pixel interpolation is nearest-neighbor, which simply rounds the $(u,v)$ coordinates to get the color of the nearest texture pixel (texel). More involved is <a href="https://en.wikipedia.org/wiki/Bilinear_interpolation">bilinear interpolation</a>, which performs a weighted average of the four nearest texels based on their distance to $(u,v)$ -- this too is effectively a low-pass filter when an image is magnified.
+                </p>
+                <div>
+                    <!-- Check out the svg files in the svg/texmap/ directory. Use the pixel inspector to find a good example of where bilinear sampling clearly defeats nearest sampling. Show and compare four png screenshots using nearest sampling at 1 sample per pixel, nearest sampling at 16 samples per pixel, bilinear sampling at 1 sample per pixel, and bilinear sampling at 16 samples per pixel. -->
+                    <div class="row">
+                        <span><img src="imgs/5-1.png">
+                            <div>Nearest-Neighbor, 1 sample/pixel</div>
+                        </span>
+                        <span><img src="imgs/5-2.png">
+                            <div>Nearest-Neighbor, 16 samples/pixel</div>
+                        </span>
+                    </div>
+                    <div class="row">
+                        <span><img src="imgs/5-3.png">
+                            <div>Bilinear, 1 sample/pixel</div>
+                        </span>
+                        <span><img src="imgs/5-4.png">
+                            <div>Bilinear, 16 samples/pixel</div>
+                        </span>
+                    </div>
+
+                    <!-- Comment on the relative differences. Discuss when there will be a large difference between the two methods and why. -->
+                    <p>
+                        We can see that bilinear sampling reduces the jagged edges, especially around the distorted bulges of the structure. This is because bilinear sampling is linear in texture space. Of course, increasing the super-sampling rate improves the image quality too (despite being potentially non-linear in texture space). At the highest sampling rate, we see that the NN and bilinear methods are nearly indistinguishable, with the latter being slightly smoother.
+                        <br>
+                        The difference between the two methods is most pronounced with no super-sampling and when the texture is magnified-- nearest-neighbor method will simply replicate the nearest texel, capable of forming jagged edges. Bilinear, on the other hand, will blend the four nearest texels leading to an overall smoother image.
+                    </p>
+                </div>
+
+            </div>
+
+            <div>
+                <h1>"Level sampling" with mipmaps for texture mapping</h1>
+                <p>
+                    <!-- Explain level sampling in your own words and describe how you implemented it for texture mapping. -->
+                    Dealing with many texels can lead to a large memory footprint and poor performance. To mitigate this, we can use level sampling by precomputing downsampled copies of the texture map (<a href="https://en.wikipedia.org/wiki/Mipmap">mipmaps</a>, a la <a href="https://cs194.mehvix.com/1/">image pyramids</a>). The memory overhead for RGB images is 33% more, nicely visualized <a href="https://en.wikipedia.org/wiki/Mipmap#/media/File:Mipmap_illustration2.png">here</a>.
+                    <br>
+                    To decide which mipmap to use at a given sample $(x,y)$, we consider vectors formed from sample to both $(x+1,y)$ and $(x,y+1)$ under texture space. We then take the larger/longer of these (proportional to most distortion of texture map), calculate the $\log_2$, and clamp to the range $[0,\text{num_levels}-1]$. Because this (probably) isn't an integer, we can either round to nearest, or linearly interpolate between the two nearest levels.
+                </p>
+
+                <div class="row">
+                    <span><img src="imgs/6-1.png">
+                        <div>Level 0, Nearest Pixel</div>
+                    </span>
+                    <span><img src="imgs/6-3.png">
+                        <div>Nearest Level, Nearest Pixel</div>
+                    </span>
+                    <span><img src="imgs/6-5.png">
+                        <div>Bilinear Level, Nearest Pixel</div>
+                    </span>
+                </div>
+                <div class="row">
+                    <span><img src="imgs/6-2.png">
+                        <div>Level 0, Bilinear Pixel</div>
+                    </span>
+                    <span><img src="imgs/6-4.png">
+                        <div>Nearest Level, Bilinear Pixel</div>
+                    </span>
+                    <span><img src="imgs/6-6.png">
+                        <div>Bilinear Level, Bilinear Pixel</div>
+                    </span>
+                </div>
+            </div>
+
+            <!-- You can now adjust your sampling technique by selecting pixel sampling, level sampling, or the number of samples per pixel. Describe the tradeoffs between speed, memory usage, and antialiasing power between the three various techniques. -->
+            <p>
+                In terms of speed, pixel sampling is the fastest as it considers 4 samples and interpolates; level sampling overhead is slightly more involved, calculating $(u,v)$ coords for the sample and its left+up neighbors to determine the correct mipmap; and supersampling is the slowest as it spawns the most additional samples.
+                <br>
+                Memory usage is worst (highest) for supersampling too, as it requires a larger buffer to store the additional samples; level sampling is next as it requires storing the mipmaps; and pixel sampling introduces no additional memory overhead as the interpolated value is stored immediately.
+                <br>
+                These drawbacks do pay off, as antialiasing power is strongest for supersampling -- it is effectively rendering a higher-resolution image that's then low-pass filtered; level sampling is next, but may lead to some of the finer details being discarded; and pixel sampling is the weakest.
+            </p>
+        </article>
+
+        <div id="footer">
+            <table id="footerTable">
+                <tr>
+                    <td>$BTC</td>
+                    <td>15adHcuUPLHzVmUqKqgeLfLzvtfD5r7WJ1</td>
+                </tr>
+                <tr>
+                    <td>$XMR</td>
+                    <td>45MaKMYnWBnNWS4rtbrMp8C6wL1B1mguW6AjmJBGqLJkCzVUMuXwamzRfrmiwLw1WrbUptNjY1DoL4Yu4fXqTDAcDEWpuTZ</td>
+                </tr>
+                <tr>
+                    <td>$ETH</td>
+                    <td>0xeeC384Cdef3aD975EdF1D2f6C1dC9a4b1fEEBF74</td>
+                </tr>
+                <tr>
+                    <td id="footerDateYear">2021</td>
+                    <td>Max Vogel</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+</body>
+
+</html>
