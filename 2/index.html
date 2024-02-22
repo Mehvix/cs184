@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <!-- Default Required Resources -->
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=569,maximum-scale=1" />
+    <link rel="alternate" type="application/rss+xml" title="Blog RSS" href="//mehvix.com/posts/rss.xml" />
+    <link href="//mehvix.com/static/css/style.css" type="text/css" rel="stylesheet" />
+    <script src="//mehvix.com/static/js/include.js"></script>
+
+    <!-- HLJS (remove if not used) -->
+    <!-- https://cdnjs.com/libraries/highlight.js -->
+    <!-- <link type="text/css" rel="stylesheet" href="/static/css/atom-one-dark.css" />
+    <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/highlight.min.js" integrity="sha512-MinqHeqca99q5bWxFNQEQpplMBFiUNrEwuuDj2rCSh1DgeeTXUgvgYIHZ1puBS9IKBkdfLMSk/ZWVDasa3Y/2A==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script>
+    hljs.highlightAll()
+    </script> -->
+
+    <!-- MathJax (remove if not used) -->
+    <script type="text/javascript" id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>
+        MathJax = {
+            tex: {
+                inlineMath: [
+                    ["$", "$"],
+                    ["\\(", "\\)"],
+                ],
+            },
+            svg: {
+                fontCache: "global"
+            },
+            loader: {
+                load: ["input/tex", "output/svg"]
+            },
+        };
+    </script>
+
+    <title>Mehvix | CS184 | Meshedit</title>
+    <style>
+        :root {
+            --outside-bg-color: #f58fe7;
+        }
+
+        body {
+            max-width: 75em !important;
+        }
+
+        #footer table td:nth-of-type(2) {
+            max-width: calc(75em - 7ch - 4em - 4em - 1ch);
+        }
+
+        .right {
+            margin: 1em 0 1em 3ch;
+            float: right;
+        }
+
+        .left {
+            margin: 1em 3ch 1em 0;
+            float: left;
+        }
+
+        .vert {
+            display: flex;
+            margin-top: 1em;
+            justify-content: space-between
+        }
+
+        div.row {
+            display: flex;
+            justify-content: space-between;
+            margin: 1em 0;
+            align-items: flex-end;
+            text-align: center;
+        }
+
+        div.row>span {
+            margin-top: 0.5em;
+        }
+
+        div.row>span:not(:first-child) {
+            margin-left: 1.5em;
+        }
+
+    </style>
+</head>
+
+<body>
+    <div class="box">
+        <div class="nav">
+            <a href="//www.mehvix.com/">~</a>/<a href="//cs184.mehvix.com/">CS184</a>/<a href="" class="inverse-bg"></a>Meshedit</a>
+        </div>
+
+        <article>
+            <!-- overview: Briefly stated overall purpose/ outline of the project -->
+            <p>
+                [overview todo]
+            </p>
+
+
+            <div>
+                <h1>Bezier Curves</h1>
+                <!-- Briefly explain de Casteljau's algorithm and how you implemented it in order to evaluate Bezier curves. -->
+                <div>
+                    <a href="https://en.wikipedia.org/wiki/De_Casteljau's_algorithm">De Casteljau's algorithm</a> is an method to generate a Bezier curve from a set of control points. Formally, given control points $p_1, p_2, \ldots, p_n$ and $t\in[0,1]$, the algorithm recursively updates by linearly interpolating adjacent pairs: $p'_i = (1-t)p_i + tp_{i+1} =: \text{lerp}(p_i, p_{i+1}, t),\ \forall i\in[1,n-1]$. This is repeated until one point remains (Figure A). This <span style="color: red">point</span>, when evaluated over $t$, defines the path of the <span style="color: rgb(0, 212, 28)">Bezier curve</span>; this is nicely visualized by the progression of <span style="color: blue">control points</span> in Figure B.
+                </div>
+                <!-- Take a look at the provided .bzc files and create your own Bezier curve with 6 control points of your choosing. Use this Bezier curve for your screenshots below. -->
+                <!-- Show screenshots of each step / level of the evaluation from the original control points down to the final evaluated point. Press E to step through. Toggle C to show the completed Bezier curve as well. -->
+                <div style="display: inline-block; width: 100%">
+                    <h2 style="margin-bottom: -1em">
+                        <span style="font-size: 12px">Figure A:</span>
+                        <span style="font-weight: normal;font-size: 11px;">$\text{lerp}$s all the way down.</span>
+                    </h2>
+                </div>
+                <div class="row">
+                    <span><img src="imgs/1-1.png">
+                        <div>Level 0 (6 control pts)</div>
+                    </span>
+                    <span><img src="imgs/1-2.png">
+                        <div>Level 1 (5 control pts)</div>
+                    </span>
+                    <span><img src="imgs/1-3.png">
+                        <div>Level 2 (4 control pts)</div>
+                    </span>
+                </div>
+                <div class="row">
+                    <span><img src="imgs/1-4.png">
+                        <div>Level 3 (3 control pts)</div>
+                    </span>
+                    <span><img src="imgs/1-5.png">
+                        <div>Level 4 (2 control pts)</div>
+                    </span>
+                    <span><img src="imgs/1-6.png">
+                        <div>Level 5 (1 red control pt)</div>
+                    </span>
+                </div>
+                <hr>
+
+
+                <!-- Show a screenshot of a slightly different Bezier curve by moving the original control points around and modifying the parameter  -->
+                <h2 style="margin-bottom: -1em">
+                    <span style="font-size: 12px">Figure B</span>
+                </h2>
+                <div class="row">
+                    <span><img src="imgs/1-11.png">
+                        <div>$t \approx 0.05$</div>
+                    </span>
+                    <span><img src="imgs/1-12.png">
+                        <div>$t \approx 0.20$</div>
+                    </span>
+                    <span><img src="imgs/1-13.png">
+                        <div>$t \approx 0.80$</div>
+                    </span>
+                </div>
+                <hr>
+                <div class="row">
+                    <span><img src="imgs/1-7.png">
+                    </span>
+                    <span><img src="imgs/1-8.png">
+                    </span>
+                    <span><img src="imgs/1-9.png">
+                    </span>
+                </div>
+
+            </div>
+
+            <div>
+                <h1>Bezier Surfaces</h1>
+
+                <!-- Show a screenshot of bez/teapot.bez (not .dae) evaluated by your implementation -->
+                <span class="right" style="width: 50%"><img src="imgs/2.png"></span>
+                <!-- Briefly explain how de Casteljau algorithm extends to Bezier surfaces and how you implemented it in order to evaluate Bezier surfaces. -->
+                <p>
+                    We can generalize to $\mathbb{R}^2$ by considering the $n\times n$ grid of control points $p_{ij}$. Evaluating a Bezier surface involves calculating the Bezier curve along the rows/$x$ direction, for some linear interpolation argument $u$; then, with these $n$ curves we repeat the process, effectively in the columns/$y$ direction given $\text{lerp}$ parameter $v$. This results in a single point corresponding to the surface at $(u,v)$.
+                </p>
+                <p>
+                    Implementation wise, <code>evaluateStep(pts,t)</code> evaluates a single step of the de Casteljau algorithm. <code>evaluate1D(pts,t)</code> runs this $n-1$ times for each row. This is then called at the top, <code>evaluate(pts,u,v)</code>, over each column and then once more to get the final point.
+                </p>
+
+            </div>
+
+            <div>
+                <h1>Area-Weighted Vertex Normals</h1>
+                <!-- Briefly explain how you implemented the area-weighted vertex normals. -->
+                <p>
+
+                </p>
+                <!-- Show screenshots of dae/teapot.dae (not .bez) comparing teapot shading with and without vertex normals. Use Q to toggle default flat shading and Phong shading. -->
+                <div class="row">
+                    <span><img src="imgs/3-1.png"></span>
+                    <span><img src="imgs/3-2.png"></span>
+                </div>
+            </div>
+
+            <div>
+                <h1>Edge Flip</h1>
+                <span class="right" style="width: 50%"><img src="imgs/flip.jpg"></span>
+                <!-- <span class="right" style="width: 50%"></span> -->
+
+                <!-- Briefly explain how you implemented the edge flip operation and describe any interesting implementation / debugging tricks you have used. -->
+                <!-- Show screenshots of a mesh before and after some edge flips. -->
+                Lorem ipsum dolor sit amet, officia excepteur ex fugiat reprehenderit enim labore culpa sint ad nisi Lorem pariatur mollit ex esse exercitation amet. Nisi anim cupidatat excepteur officia. Reprehenderit nostrud nostrud ipsum Lorem est aliquip amet voluptate voluptate dolor minim nulla est proident. Nostrud officia pariatur ut officia. Sit irure elit esse ea nulla sunt ex occaecat reprehenderit commodo officia dolor Lorem duis laboris cupidatat officia voluptate. Culpa proident adipisicing id nulla nisi laboris ex in Lorem sunt duis officia eiusmod. Aliqua reprehenderit commodo ex non excepteur duis sunt velit enim. Voluptate laboris sint cupidatat ullamco ut ea consectetur et est culpa et culpa duis.
+                <!-- Write about your eventful debugging journey, if you have experienced one. -->
+                <p>
+                    Debugging involved ensuring the code matched the diagrams
+                </p>
+                <div>
+                    <img src="imgs/4-1.png">
+                </div>
+
+
+            </div>
+
+            <div>
+                <h1>Edge Split</h1>
+                <span class="right" style="width: 50%"><img src="imgs/split.jpg"></span>
+
+                <p>
+                    <!-- Briefly explain how you implemented the edge split operation and describe any interesting implementation / debugging tricks you have used. -->
+                    Lorem ipsum dolor sit amet, officia excepteur ex fugiat reprehenderit enim labore culpa sint ad nisi Lorem pariatur mollit ex esse exercitation amet. Nisi anim cupidatat excepteur officia. Reprehenderit nostrud nostrud ipsum Lorem est aliquip amet voluptate voluptate dolor minim nulla est proident. Nostrud officia pariatur ut officia. Sit irure elit esse ea nulla sunt ex occaecat reprehenderit commodo officia dolor Lorem duis laboris cupidatat officia voluptate. Culpa proident adipisicing id nulla nisi laboris ex in Lorem sunt duis officia eiusmod. Aliqua reprehenderit commodo ex non excepteur duis sunt velit enim. Voluptate laboris sint cupidatat ullamco ut ea consectetur et est culpa et culpa duis.
+                </p>
+                <!-- Show screenshots of a mesh before and after some edge splits. -->
+                <!-- Show screenshots of a mesh before and after a combination of both edge splits and edge flips. -->
+                <!-- Write about your eventful debugging journey, if you have experienced one. -->
+                <br>
+                <div class="row">
+                    <span><img src="imgs/5-1.png"></span>
+                    <span><img src="imgs/5-2.png"></span>
+                </div>
+                <!-- If you have implemented support for boundary edges, show screenshots of your implementation properly handling split operations on boundary edges. -->
+            </div>
+
+            <div>
+                <h1>Loop Subdivision for Mesh Upsampling</h1>
+                <!-- Briefly explain how you implemented the loop subdivision and describe any interesting implementation / debugging tricks you have used. -->
+                <!-- Take some notes, as well as some screenshots, of your observations on how meshes behave after loop subdivision. What happens to sharp corners and edges? Can you reduce this effect by pre-splitting some edges? -->
+
+                <div class="row">
+                    <span><img src="imgs/6-21.png"></span>
+                    <span><img src="imgs/6-22.png"></span>
+                    <span><img src="imgs/6-23.png"></span>
+                </div>
+                <div class="row">
+                    <span><img src="imgs/6-24.png"></span>
+                    <span><img src="imgs/6-25.png"></span>
+                    <span><img src="imgs/6-27.png"></span>
+                </div>
+
+
+                <!-- Load dae/cube.dae. Perform several iterations of loop subdivision on the cube. Notice that the cube becomes slightly asymmetric after repeated subdivisions. Can you pre-process the cube with edge flips and splits so that the cube subdivides symmetrically? Document these effects and explain why they occur. Also explain how your pre-processing helps alleviate the effects. -->
+                <div class="row">
+                    <span>Default<img src="imgs/6-5.png"></span>
+                    <span>Meet at corner<img src="imgs/6-1.png"></span>
+                    <span>Side zig-zag<img src="imgs/6-9.png"></span>
+                </div>
+                <div class="row">
+                    <span><img src="imgs/6-6.png"></span>
+                    <span><img src="imgs/6-2.png"></span>
+                    <span><img src="imgs/6-10.png"></span>
+                </div>
+                <div class="row">
+                    <span><img src="imgs/6-7.png"></span>
+                    <span><img src="imgs/6-3.png"></span>
+                    <span><img src="imgs/6-11.png"></span>
+                </div>
+                <div class="row">
+                    <span><img src="imgs/6-8.png"></span>
+                    <span><img src="imgs/6-4.png"></span>
+                    <span><img src="imgs/6-12.png"></span>
+                </div>
+                <!-- <div class="row">
+                    <span><img src="imgs/6-5.png"></span>
+                    <span><img src="imgs/6-6.png"></span>
+                    <span><img src="imgs/6-7.png"></span>
+                    <span><img src="imgs/6-8.png"></span>
+                </div>
+                <div class="row">
+                    <span><img src="imgs/6-1.png"></span>
+                    <span><img src="imgs/6-2.png"></span>
+                    <span><img src="imgs/6-3.png"></span>
+                    <span><img src="imgs/6-4.png"></span>
+                </div>
+                <div class="row">
+                    <span><img src="imgs/6-9.png"></span>
+                    <span><img src="imgs/6-10.png"></span>
+                    <span><img src="imgs/6-11.png"></span>
+                    <span><img src="imgs/6-12.png"></span>
+                </div> -->
+                <!-- If you have implemented any extra credit extensions, explain what you did and document how they work with screenshots. -->
+
+            </div>
+        </article>
+
+        <div id="footer">
+            <table id="footerTable">
+                <tr>
+                    <td>$BTC</td>
+                    <td>15adHcuUPLHzVmUqKqgeLfLzvtfD5r7WJ1</td>
+                </tr>
+                <tr>
+                    <td>$XMR</td>
+                    <td>45MaKMYnWBnNWS4rtbrMp8C6wL1B1mguW6AjmJBGqLJkCzVUMuXwamzRfrmiwLw1WrbUptNjY1DoL4Yu4fXqTDAcDEWpuTZ</td>
+                </tr>
+                <tr>
+                    <td>$ETH</td>
+                    <td>0xeeC384Cdef3aD975EdF1D2f6C1dC9a4b1fEEBF74</td>
+                </tr>
+                <tr>
+                    <td id="footerDateYear">2021</td>
+                    <td>Max Vogel</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+</body>
+
+</html>
