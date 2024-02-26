@@ -94,7 +94,7 @@
         <article>
             <!-- overview: Briefly stated overall purpose/ outline of the project -->
             <p>
-                [overview todo]
+                In this project we develop meshedit, first supporting Bezier curves and surfaces. We then move to mesh-space, implementing area-weighted vertex normals, edge flip and splits, then loop subdivision.
             </p>
 
 
@@ -102,7 +102,7 @@
                 <h1>Bezier Curves</h1>
                 <!-- Briefly explain de Casteljau's algorithm and how you implemented it in order to evaluate Bezier curves. -->
                 <div>
-                    <a href="https://en.wikipedia.org/wiki/De_Casteljau's_algorithm">De Casteljau's algorithm</a> is an method to generate a Bezier curve from a set of control points. Formally, given control points $p_1, p_2, \ldots, p_n$ and $t\in[0,1]$, the algorithm recursively updates by linearly interpolating adjacent pairs: $p'_i = (1-t)p_i + tp_{i+1} =: \text{lerp}(p_i, p_{i+1}, t),\ \forall i\in[1,n-1]$. This is repeated until one point remains (Figure A). This <span style="color: red">point</span>, when evaluated over $t$, defines the path of the <span style="color: rgb(0, 212, 28)">Bezier curve</span>; this is nicely visualized by the progression of <span style="color: blue">control points</span> in Figure B.
+                    <a href="https://en.wikipedia.org/wiki/De_Casteljau's_algorithm">De Casteljau's algorithm</a> is an method to generate a Bezier curve from a set of control points. Formally, given control points $p_1, p_2, \ldots, p_n$ and $t\in[0,1]$, the algorithm recursively updates by linearly interpolating adjacent pairs: $p'_i = (1-t)p_i + tp_{i+1} =: \text{lerp}(p_i, p_{i+1}, t),\ \forall i\in[1,n-1]$. This is repeated until one point remains (Figure A). This <span style="color: red">point</span>, when evaluated over $t$, defines the path of the <span style="color: rgb(0, 212, 28)">Bezier curve</span>; this is nicely visualized in Figure B by the progression of <span style="color: blue">control points</span> as $t$ varies.
                 </div>
                 <!-- Take a look at the provided .bzc files and create your own Bezier curve with 6 control points of your choosing. Use this Bezier curve for your screenshots below. -->
                 <!-- Show screenshots of each step / level of the evaluation from the original control points down to the final evaluated point. Press E to step through. Toggle C to show the completed Bezier curve as well. -->
@@ -165,10 +165,10 @@
             </div>
 
             <div>
-                <h1>Bezier Surfaces</h1>
-
                 <!-- Show a screenshot of bez/teapot.bez (not .dae) evaluated by your implementation -->
                 <span class="right" style="width: 50%"><img src="imgs/2.png"></span>
+                <h1>Bezier Surfaces</h1>
+
                 <!-- Briefly explain how de Casteljau algorithm extends to Bezier surfaces and how you implemented it in order to evaluate Bezier surfaces. -->
                 <p>
                     We can generalize to $\mathbb{R}^2$ by considering the $n\times n$ grid of control points $p_{ij}$. Evaluating a Bezier surface involves calculating the Bezier curve along the rows/$x$ direction, for some linear interpolation argument $u$; then, with these $n$ curves we repeat the process, effectively in the columns/$y$ direction given $\text{lerp}$ parameter $v$. This results in a single point corresponding to the surface at $(u,v)$.
@@ -182,47 +182,52 @@
             <div>
                 <h1>Area-Weighted Vertex Normals</h1>
                 <!-- Briefly explain how you implemented the area-weighted vertex normals. -->
+                <span class="right" style="width: 40%; text-align: center"><img src="https://www.scratchapixel.com/images/shading-intro/shad-face-normals2.png?">
+                    Source: <a href="https://www.scratchapixel.com/lessons/3d-basic-rendering/introduction-to-shading/shading-normals.html"><i>Introduction to Shading</i></a>
+                </span>
                 <p>
-
+                    To go about <a href="https://en.wikipedia.org/wiki/Shading">shading</a>, we will replace the out-of-the-box flat shading with <a href="https://en.wikipedia.org/wiki/Phong_shading">Phong shading</a>. The problem involves determining how we should darken a pixel in a triangle based on the angle between the light source and the <a href="https://en.wikipedia.org/wiki/Normal_(geometry)">normal</a> of said triangle. Initially, we use the face normal which is fast but produces discontinuities at edges (left). Phong shading addresses this, producing a continuous gradient over a discontinuous mesh, by interpolating the vertex normals across each triangle (right).
+                </p>
+                <p>
+                    In terms of implementation, barycentric interpolation is handled for us so all we must do is implement the function to calculate the vertex normal. This is done by iterating over each face (pair of outgoing adjacent edges from the vertex). With each, we add to a running sum the area-weighted normal of this face (i.e. the cross product of the edges). This is then normalized to a unit vector and returned.
                 </p>
                 <!-- Show screenshots of dae/teapot.dae (not .bez) comparing teapot shading with and without vertex normals. Use Q to toggle default flat shading and Phong shading. -->
                 <div class="row">
                     <span><img src="imgs/3-1.png"></span>
                     <span><img src="imgs/3-2.png"></span>
                 </div>
+                <div class="row">
+                    <span><img src="imgs/3-3.png"></span>
+                    <span><img src="imgs/3-4.png"></span>
+                </div>
             </div>
 
             <div>
+                <span class="right" style="width: 40%"><img src="imgs/both.jpg"></span>
                 <h1>Edge Flip</h1>
-                <span class="right" style="width: 50%"><img src="imgs/flip.jpg"></span>
-                <!-- <span class="right" style="width: 50%"></span> -->
-
-                <!-- Briefly explain how you implemented the edge flip operation and describe any interesting implementation / debugging tricks you have used. -->
-                <!-- Show screenshots of a mesh before and after some edge flips. -->
-                Lorem ipsum dolor sit amet, officia excepteur ex fugiat reprehenderit enim labore culpa sint ad nisi Lorem pariatur mollit ex esse exercitation amet. Nisi anim cupidatat excepteur officia. Reprehenderit nostrud nostrud ipsum Lorem est aliquip amet voluptate voluptate dolor minim nulla est proident. Nostrud officia pariatur ut officia. Sit irure elit esse ea nulla sunt ex occaecat reprehenderit commodo officia dolor Lorem duis laboris cupidatat officia voluptate. Culpa proident adipisicing id nulla nisi laboris ex in Lorem sunt duis officia eiusmod. Aliqua reprehenderit commodo ex non excepteur duis sunt velit enim. Voluptate laboris sint cupidatat ullamco ut ea consectetur et est culpa et culpa duis.
-                <!-- Write about your eventful debugging journey, if you have experienced one. -->
                 <p>
-                    Debugging involved ensuring the code matched the diagrams
+                    <!-- Briefly explain how you implemented the edge flip operation and describe any interesting implementation / debugging tricks you have used. -->
+                    Edge flip operations involve updating the mesh topology (<a href="https://cs184.eecs.berkeley.edu/sp24/docs/half-edge-intro">halfedge data structure</a>) of the two triangles an edge is associated with. This involves traversing the mesh from $e_0$ to memoize everything in the diagram: the 10 halfedges, 4 vertices and edges, and 2 faces. When this is done, we can update references of the 6 changed (inner) halfedges, then again the half-pointer associations of the vertices $v_0, v_1$ and of both faces. While we do not update all elements memoized directly, we do need to cache them nonetheless as they are referenced by the elements we do update.
                 </p>
-                <div>
-                    <img src="imgs/4-1.png">
-                </div>
+                <p>
+                    <!-- Write about your eventful debugging journey, if you have experienced one. -->
+                    Debugging involved finding sillies where I'd mis-program the updated references. This would result in the code not matching the diagram, and produce missing edges or faces.
+                </p>
 
-
+                <!-- Show screenshots of a mesh before and after some edge flips. -->
+                <span style="width: 55%; display: block"><img src="imgs/4-1.png"></span>
             </div>
+
 
             <div>
                 <h1>Edge Split</h1>
-                <span class="right" style="width: 50%"><img src="imgs/split.jpg"></span>
-
                 <p>
                     <!-- Briefly explain how you implemented the edge split operation and describe any interesting implementation / debugging tricks you have used. -->
-                    Lorem ipsum dolor sit amet, officia excepteur ex fugiat reprehenderit enim labore culpa sint ad nisi Lorem pariatur mollit ex esse exercitation amet. Nisi anim cupidatat excepteur officia. Reprehenderit nostrud nostrud ipsum Lorem est aliquip amet voluptate voluptate dolor minim nulla est proident. Nostrud officia pariatur ut officia. Sit irure elit esse ea nulla sunt ex occaecat reprehenderit commodo officia dolor Lorem duis laboris cupidatat officia voluptate. Culpa proident adipisicing id nulla nisi laboris ex in Lorem sunt duis officia eiusmod. Aliqua reprehenderit commodo ex non excepteur duis sunt velit enim. Voluptate laboris sint cupidatat ullamco ut ea consectetur et est culpa et culpa duis.
+                    The edge split operation is implemented similarly to the flip operation, following the design pattern outlined <a href="http://15462.courses.cs.cmu.edu/fall2015content/misc/HalfedgeEdgeOpImplementationGuide.pdf">here</a>. Memoization is done exactly like flip; how split differs is that we now introduce a new vertex and with it two faces and 4 edges + 8 halfedges. But since we end up throwing away an original edge (and thus two halfedges) we repurpose them and only need to allocate 3 new edges and 6 halfedges. Reference updating then proceeds as before, but we also must mark <code>isNew</code> on $e_0$ and $e_6$ for mesh subdividing.
                 </p>
                 <!-- Show screenshots of a mesh before and after some edge splits. -->
                 <!-- Show screenshots of a mesh before and after a combination of both edge splits and edge flips. -->
                 <!-- Write about your eventful debugging journey, if you have experienced one. -->
-                <br>
                 <div class="row">
                     <span><img src="imgs/5-1.png"></span>
                     <span><img src="imgs/5-2.png"></span>
@@ -232,9 +237,23 @@
 
             <div>
                 <h1>Loop Subdivision for Mesh Upsampling</h1>
-                <!-- Briefly explain how you implemented the loop subdivision and describe any interesting implementation / debugging tricks you have used. -->
+                <p>
+                    <!-- Briefly explain how you implemented the loop subdivision and describe any interesting implementation / debugging tricks you have used. -->
+                    We accomplish mesh upsampling via <a href="https://en.wikipedia.org/wiki/Loop_subdivision_surface">Loop subdivision</a>. This process involves splitting each triangle into four, then updating the original vertices and positioning the new ones according to a set of <a href="https://cs184.eecs.berkeley.edu/sp24/docs/hw2_vupdate.jpg">averaging rules</a> that grantee <a href="https://en.wikipedia.org/wiki/Smoothness#Parametric_continuity">$\mathcal C^2$ smoothness</a>.
+                </p>
+                <p>
+                    We first calculate and cache the new positions of all the original vertices as $(1-nu)\cdot \text{OG position} + u \cdot \sum^n_i \text{neighbor$_i$ position}$ where $n$ is the vertex degree and $u$ is $3/16$ if $n=3$ and $3/8n$ otherwise. Next, for each edge, we calculate and cache the corresponding new vertex position according to its neighbors: $(3(A+B)+(C+D))/8$ (see averaging rules picture for notation).
+                </p>
+                <p>
+                    Now we actually go over each edge (in any order), splitting it and updating the new vertex cached position according to the edges cached position. We then go over each of these new edges and for those connecting a new and old vertex we flip -- this ensures that we obtain the same triangulation<sup>1</sup>, regardless of the order in which we split edges. Finally, we go over each vertex and update its position according to the cached position.
+                    <hr>
+                    <sup>1</sup>I think this may be a <a href="https://en.wikipedia.org/wiki/Delaunay_triangulation">Delaunay triangulation</a> in that it maximizes the smallest angle present.
+                </p>
+                <br>
                 <!-- Take some notes, as well as some screenshots, of your observations on how meshes behave after loop subdivision. What happens to sharp corners and edges? Can you reduce this effect by pre-splitting some edges? -->
-
+                <p>
+                    Analogous to supersampling (discussed in <a href="/1/">project 1</a>), we see that subdivision reduces jaggies as it increases the number of triangles (resolution). As we increase the number of iterations, sharp corners become more rounded and edges become more smooth as they're averaged. If we wanted to marginalize this effect we could pre-split edges -- this will increase the degree and thus lessen the contribution of any single neighboring vertex. Additionally, creating splits provides vertices closer to the original value, which when averaged with the original vertex will reduce the overall pull away from the original location.
+                </p>
                 <div class="row">
                     <span><img src="imgs/6-21.png"></span>
                     <span><img src="imgs/6-22.png"></span>
@@ -246,46 +265,35 @@
                     <span><img src="imgs/6-27.png"></span>
                 </div>
 
-
+                <br>
                 <!-- Load dae/cube.dae. Perform several iterations of loop subdivision on the cube. Notice that the cube becomes slightly asymmetric after repeated subdivisions. Can you pre-process the cube with edge flips and splits so that the cube subdivides symmetrically? Document these effects and explain why they occur. Also explain how your pre-processing helps alleviate the effects. -->
+                <p>
+                    When we subdivide the cube, we notice it becomes asymmetric due to the asymmetry in the mesh. No matter how we flip the edges, this asymmetry persists as the vertices do not all have the same degree; however, if we split each of the edges crossing the face (making each faces mesh a symmetric $\times$, each vertex having degree 4) we are able to maintain symmetry.
+                </p>
                 <div class="row">
                     <span>Default<img src="imgs/6-5.png"></span>
                     <span>Meet at corner<img src="imgs/6-1.png"></span>
-                    <span>Side zig-zag<img src="imgs/6-9.png"></span>
+                    <!-- <span>Side zig-zag<img src="imgs/6-9.png"></span> -->
+                    <span>Split<img src="imgs/6-31.png"></span>
                 </div>
                 <div class="row">
                     <span><img src="imgs/6-6.png"></span>
                     <span><img src="imgs/6-2.png"></span>
-                    <span><img src="imgs/6-10.png"></span>
+                    <!-- <span><img src="imgs/6-10.png"></span> -->
+                    <span><img src="imgs/6-32.png"></span>
                 </div>
                 <div class="row">
                     <span><img src="imgs/6-7.png"></span>
                     <span><img src="imgs/6-3.png"></span>
-                    <span><img src="imgs/6-11.png"></span>
+                    <!-- <span><img src="imgs/6-11.png"></span> -->
+                    <span><img src="imgs/6-33.png"></span>
                 </div>
                 <div class="row">
                     <span><img src="imgs/6-8.png"></span>
                     <span><img src="imgs/6-4.png"></span>
-                    <span><img src="imgs/6-12.png"></span>
+                    <!-- <span><img src="imgs/6-12.png"></span> -->
+                    <span><img src="imgs/6-34.png"></span>
                 </div>
-                <!-- <div class="row">
-                    <span><img src="imgs/6-5.png"></span>
-                    <span><img src="imgs/6-6.png"></span>
-                    <span><img src="imgs/6-7.png"></span>
-                    <span><img src="imgs/6-8.png"></span>
-                </div>
-                <div class="row">
-                    <span><img src="imgs/6-1.png"></span>
-                    <span><img src="imgs/6-2.png"></span>
-                    <span><img src="imgs/6-3.png"></span>
-                    <span><img src="imgs/6-4.png"></span>
-                </div>
-                <div class="row">
-                    <span><img src="imgs/6-9.png"></span>
-                    <span><img src="imgs/6-10.png"></span>
-                    <span><img src="imgs/6-11.png"></span>
-                    <span><img src="imgs/6-12.png"></span>
-                </div> -->
                 <!-- If you have implemented any extra credit extensions, explain what you did and document how they work with screenshots. -->
 
             </div>
