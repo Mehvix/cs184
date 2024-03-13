@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <!-- Default Required Resources -->
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=569,maximum-scale=1" />
+    <link rel="alternate" type="application/rss+xml" title="Blog RSS" href="//mehvix.com/posts/rss.xml" />
+    <link href="//mehvix.com/static/css/style.css" type="text/css" rel="stylesheet" />
+    <script src="//mehvix.com/static/js/include.js"></script>
+
+    <!-- HLJS (remove if not used) -->
+    <!-- https://cdnjs.com/libraries/highlight.js -->
+    <!-- <link type="text/css" rel="stylesheet" href="/static/css/atom-one-dark.css" />
+    <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/highlight.min.js" integrity="sha512-MinqHeqca99q5bWxFNQEQpplMBFiUNrEwuuDj2rCSh1DgeeTXUgvgYIHZ1puBS9IKBkdfLMSk/ZWVDasa3Y/2A==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script>
+    hljs.highlightAll()
+    </script> -->
+
+    <!-- MathJax (remove if not used) -->
+    <script type="text/javascript" id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>
+        MathJax = {
+            tex: {
+                inlineMath: [
+                    ["$", "$"],
+                    ["\\(", "\\)"],
+                ],
+            },
+            svg: {
+                fontCache: "global"
+            },
+            loader: {
+                load: ["input/tex", "output/svg"]
+            },
+        };
+    </script>
+
+    <title>Mehvix | CS184 | Ray Tracer</title>
+
+    <link rel="stylesheet" href="../style.css">
+    <style>
+        :root {
+            --outside-bg-color: #af2900;
+        }
+
+        #speed {}
+
+        #speed th {
+            text-align: center;
+            padding: 0 1.5ch;
+
+        }
+
+        #speed td:not(:first-child) {
+            text-align: right;
+        }
+
+    </style>
+</head>
+
+<body>
+    <div class="box">
+        <div class="nav">
+            <a href="//www.mehvix.com/">~</a>/<a href="//cs184.mehvix.com/">CS184</a>/<a href="" class="inverse-bg"></a>Ray Tracer</a>
+        </div>
+
+        <article>
+            <!-- overview: Briefly stated overall purpose/ outline of the project -->
+            <p>
+                This project involves coding a raytracer from scratch, implementing ray generation, triangle intersection, and shading. I enjoyed this project as it includes a good amount of both theory (optics/physics) and practice (datastructures and statistical methods) to produce realistic images in a reasonable amount of time.
+            </p>
+
+
+            <div>
+                <h1>Ray Generation and Scene Intersection</h1>
+
+                <!-- Walk through the ray generation and primitive intersection parts of the rendering pipeline. -->
+                <p>
+                    To render a raytraced scene, we first need to generate the sampling rays starting at origin and passing through the sensor (screen). We define image space as unit square where $(0,0)$ is bottom left and $(1,1)$ is top right. Our function maps these image coordinates into camera space such that $(\mp\tan(\text{hFov}/2),\mp\tan(\text{vFov}/2),-1)$ correspond to bottom left/top right corners (read as minus/plus). The $-1$ comes from clamping the virtual camera sensor to be at $z=-1$ in camera space. The docs have a <a href="https://i.imgur.com/1RInV9l.png">nice diagram</a> of this mapping. We then transform these camera space coordinates into world space by multiplying with the aptly named <code>c2w</code> (camera-to-world) matrix. Adding this to the cameras position (given in world coords) gives us the ray.
+                </p>
+                <p>
+                    To actually render the image to the $h\times w$ canvas, we sample each pixel a number of times and average the results. This involves generating samples by adding uniform noise (over $[0,1]^2$) to the pixel coordinates $(x,y)$ then normalizing by the screen dimensions. With these rays, we sample by shooting them into the scene and checking if they hit anything-- this motivates the next section, figuring out if a ray intersects with a triangle (which compose object meshes, see <a href="../2/">project 2</a>).
+                </p>
+                <!-- Explain the triangle intersection algorithm you implemented in your own words. -->
+                <p>
+                    Ray-Triangle intersection can be done using the <a href="https://en.wikipedia.org/wiki/M%C3%B6ller%E2%80%93Trumbore_intersection_algorithm">Möller-Trumbore</a> algorithm; really it's a optimized, closed form solution to the system of equations -- by using Cramer's rule, it solves for the $t$ at which the ray intersects the triangle's normal plane and the corresponding barycentric coordinates of the point on the plane. An intersection hits (is inside) the triangle iff these barycentric coordinates are in the range $[0,1]$.
+                </p>
+
+                <!-- Show images with normal shading for a few small .dae files. -->
+                <div class="row">
+                    <span><img src="imgs/1-4.png"></span>
+                    <span><img src="imgs/1-2.png"></span>
+                </div>
+                <div class="row">
+                    <span><img src="imgs/1-1.png"></span>
+                    <span><img src="imgs/1-3.png"></span>
+                </div>
+            </div>
+
+            <div>
+                <h1>Bounding Volume Hierarchy</h1>
+
+                <!-- Walk through your BVH construction algorithm. Explain the heuristic you chose for picking the splitting point. -->
+                <p>
+                    When rendering a scene, it is not practical to check every triangle in the scene for if it intersects with the ray; $\mathcal O (n)$. This motivates a <a href="https://en.wikipedia.org/wiki/Bounding_volume_hierarchy">Bounding Volume Hierarchy</a> to organize the triangles spatially into a tree structure, enabling intersection checks to recursively cull the portions of the scene that the ray is guaranteed to not intersect; $\mathcal O(\log n)$.
+                </p>
+                <p>
+                    When BVH is constructor is called, it begins by iterating over all triangles in the scene to calculate the bounding box and average centroid. If we have more triangles than <code>max_leaf_size</code>, we <a href="https://en.cppreference.com/w/cpp/algorithm/partition">partition</a> them about the average centroid; specifically, w.r.t. the distance along the axis corresponding to the maximum side length of the bounding box. Assuming this doesn't place all the elements in one child, we recurse on the left and right partitions to build the tree. In practice, this relatively simple heuristic of splitting about the longest axis by the mean allows us to render vastly more complex geometry:
+                </p>
+                <!-- Show images with normal shading for a few large .dae files that you can only render with BVH acceleration. -->
+                <div class="row">
+                    <span><img src="imgs/2-1.png"></span>
+                    <span><img src="imgs/2-2.png"></span>
+                </div>
+                <div class="row">
+                    <span><img src="imgs/2-3.png"></span>
+                    <span><img src="imgs/2-4.png"></span>
+                </div>
+
+                <!-- Compare rendering times on a few scenes with moderately complex geometries with and without BVH acceleration. Present your results in a one-paragraph analysis. -->
+                <p>
+                    Below is the performance of the raytracer with and without BVH acceleration across two simple and four complex scenes. You can see that render times go from an upper bound of minutes down to less than a tenth of a second<sup>1</sup>. Because the BVH culling is able to alleviate most objects before checking for intersection, this average is significantly reduced and is no longer driven by primitive count (rather, the scene geometry).
+                </p>
+                <table id="speed">
+                    <tr>
+                        <th rowspan="2">Scene</th>
+                        <th rowspan="2">Primitives</th>
+                        <th colspan="2">Render time (sec.)</th>
+                        <th colspan="2">Avg. intersection tests/ray</th>
+                    </tr>
+                    <tr>
+                        <th>no BVH</th>
+                        <th>BVH</th>
+                        <th>no BVH</th>
+                        <th>BVH</th>
+                    </tr>
+                    <tr>
+                        <td><code>banana.dae</code></td>
+                        <td>2,458</td>
+                        <td>2.9669</td>
+                        <td>0.0683</td>
+                        <td>97.519262</td>
+                        <td>0.936767</td>
+                    </tr>
+                    <tr>
+                        <td><code>cow.dae</code></td>
+                        <td>5,856</td>
+                        <td>11.9519</td>
+                        <td>0.0669</td>
+                        <td>403.385148</td>
+                        <td>2.232791</td>
+                    </tr>
+                    <tr>
+                        <td><code>beast.dae</code></td>
+                        <td>64,618</td>
+                        <td>230.4352</td>
+                        <td>0.0651</td>
+                        <td>9,040.458066</td>
+                        <td>1.970359</td>
+                    </tr>
+                    <tr>
+                        <td><code>CBlucy.dae</code></td>
+                        <td>133,796</td>
+                        <td>395.7894</td>
+                        <td>0.0746</td>
+                        <td>12,089.390699</td>
+                        <td>1.940943</td>
+                    </tr>
+                    <tr>
+                        <td><code>dragon.dae</code></td>
+                        <td>105,120</td>
+                        <td>234.7619</td>
+                        <td>0.0788</td>
+                        <td>10,386.453012</td>
+                        <td>2.618788</td>
+                    </tr>
+                    <tr>
+                        <td><code>maxplanck.dae</code></td>
+                        <td>50,801</td>
+                        <td>147.5124</td>
+                        <td>0.0980</td>
+                        <td>5,938.841550</td>
+                        <td>3.333972</td>
+                    </tr>
+                </table>
+                <p><sup>1</sup>: For reference, these are times rendering with 8 threads on my Thinkpad P14s laptop.</p>
+            </div>
+
+            <div>
+                <h1>Direct Illumination</h1>
+                <p>
+                    Direct illumination is the contribution of illumination from rays that originate directly from a light source. This involves zero-bounce illumination. i.e. light coming directly from a light source, as well as one-bounce illumination, i.e. the rays emitting from a light source that bounce off a surface before reaching the virtual camera. We model this by shooting a ray from our camera into the scene, and sampling rays from the point of intersection -- if they hit a light source, we add the contribution to the pixel. Mathematically, we model this light transportation with the <a href="https://en.wikipedia.org/wiki/Rendering_equation">rendering equation</a>:
+
+                    $$L_r(p,\omega_r) = \int f_r(p, \omega_i \to \omega_r) L_i (p, \omega_i) \cos \theta_i \ \mathrm d \omega_i \approx \frac 1 N \sum_{j=1}^N f_r(p, \omega_j \to \omega_r) L_i (p, \omega_j) \cos \theta_j \frac 1 {p(\omega_j)}$$
+
+                    where $f_r(p, \omega_j \to \omega_r)$ is the <a href="https://en.wikipedia.org/wiki/Bidirectional_scattering_distribution_function">BSDF</a> (a material property) at the initial intersection point (given the incident and reflected rays), $L_i (p, \omega_j)$ is the incident (for now, zero-bounce) light at the sample point, and $\cos \theta_i$ is the angle between the normal and the sample ray (see <a href="https://en.wikipedia.org/wiki/Lambert's_cosine_law">Lambert's cosine law</a>).
+                </p>
+                <p>
+                    Since this integral is intractable, we use <a href="https://en.wikipedia.org/wiki/Monte_Carlo_integration">Monte Carlo integration</a> to obtain an unbiased estimator. The integral is approximated by summing over a $N$umber of samples $\omega_j \sim p(\cdot)$, where the $p$robability density function can be uniform or importance sampled.
+                </p>
+
+
+                <!-- Walk through both implementations of the direct lighting function. -->
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="width: 49%;">
+                        <h2>Hemisphere</h2>
+                        <p>
+                            We uniformly sample <code>num_samples</code> rays from the hemisphere about the normal at the point of intersection; as such, $p(\omega_i) = 1/{2\pi}$ (inverse surface area of hemisphere). This naive method will produce many rays that--by chance--don't hit anything, leading to high-variance, noisy results. A key implementation details is setting the bounce ray's minimum time to <code>EPS_D</code>=$1\mathrm{e-}11$ to prevent self-intersection arising from numerical precision errors.
+                        </p>
+                    </span>
+                    <span style="width: 49%;">
+                        <h2>Importance</h2>
+                        <p>
+                            Importance sampling casts rays directly towards lights. For point lights, we only need to sample once; otherwise, we sample points on the light's surface proportional to <code>ns_area_light</code>. Importantly, I hugged the $\cos$ term in $\text{ReLU}$ to prevent rays from being cast from the backside of the surface (i.e. rays with negative $z$).
+                        </p>
+                    </span>
+                </div>
+                <!-- Show some images rendered with both implementations of the direct lighting function. -->
+                <div class="row row-full" style="margin-top: 0">
+                    <span><img src="imgs/3-bunny_64_32_H.png"></span>
+                    <span style="padding-right: 2px"><img src="imgs/3-wall_64_32_H.png"></span>
+                    <span><img src="imgs/3-bunny_64_32.png"></span>
+                    <span><img src="imgs/3-wall_64_32.png"></span>
+                </div>
+
+
+                <!-- Focus on one particular scene with at least one area light and compare the noise levels in soft shadows when rendering with 1, 4, 16, and 64 light rays (the -l flag) and with 1 sample per pixel (the -s flag) using light sampling, not uniform hemisphere sampling. -->
+                <span class="right" style="width: 49.8%; margin-top: 0">
+                    <div>
+                        <div class="row row-full" style="margin: 0">
+                            <span><img src="imgs/3-sphere_1_1.png">$\ell=1$</span>
+                            <span><img src="imgs/3-sphere_1_4.png">$\ell=4$</span>
+                        </div>
+                        <div class="row row-full" style="margin: 0">
+                            <span><img src="imgs/3-sphere_1_16.png">$\ell=16$</span>
+                            <span><img src="imgs/3-sphere_1_64.png">$\ell=64$</span>
+                        </div>
+                    </div>
+                </span>
+
+                <!-- Compare the results between uniform hemisphere sampling and lighting sampling in a one-paragraph analysis. -->
+                <p>
+                    As shown above, the naive hemisphere sampling produces a more grainy bunny rendering. Moreover, scenes with no area lights (e.g. Wall-E) are unable to be lit with hemisphere sampling as we almost surely will never sample a ray that happens to intersect with any point light. In contrast, importance sampling handles this just fine as it considers vector from surface to point-light and checks if it's unobstructed (and positive $z$ w.r.t. surface normal). This 'reverse' approach has far less variance and, as such, converges quickly to a cleaner image.
+                </p>
+                <p>
+                    To the left is a visualization showing how increasing $\ell$, the factor of samples we take per unit of light-area, reduces noise in importance sampling. Intuitively, as we take more samples the locations we consider become more representative of the light's true distribution/shape, and as such, the variance of our estimator decreases.
+                </p>
+            </div>
+
+            <div>
+                <div class="right" style="width: 49.8%; text-align: center">
+                    <!-- Pick one scene and compare rendered views first with only direct illumination, then only indirect illumination. Use 1024 samples per pixel. (You will have to edit PathTracer::at_least_one_bounce_radiance(...) in your code to generate these views.) -->
+                    <span><img src="imgs/4-indirect-balls.png"><i>Indirect Lighting</i></span>
+                </div>
+
+                <h1>Global Illumination</h1>
+                <!-- Walk through your implementation of the indirect lighting function. -->
+                <p>
+                    Indirect illumination is the contribution of light that has bounced off surfaces in the scene. Before, we considered zero and one-bounce sampling -- now we consider $m>1$ which we model recursively: an $m$-bounce sample is the result of the one-bounce sample at this point plus the the $m-1$-bounce sample from a new sample point.
+                </p>
+                <p>
+                    Now the images no longer have dark shadows and the ceiling is no longer black -- light is now able to bounce off the walls/floor to illuminate shadows/ceiling.
+                </p>
+                <p>
+                    To the left is shown indirect illumination, e.g. all bounces other than $m=1$. Notice how, compared to the direct illumination ($\ell$ figures above, of prior section), there are no deep shadows and we can faintly see shadows cast by the spheres on the wall.
+                </p>
+
+
+                <p>
+                    Below we show how the $m$-th bounce of light contributes to the rendered image. The top row shows accumulating bounces, and the bottom shows the bounce at depth $m$. For $m=2$, we see the ceiling is now illuminated by the light bouncing off the floor which also illuminates the bottom of the bunny. For $m=3$, we see the light begins to become more evenly distributed across the scene and the shadows are less pronounced. This darkening trend continues as $m$ increases as rays shoot off into the void / dissipate into materials.
+                </p>
+
+                <!-- For CBbunny.dae, compare rendered views with max_ray_depth set to 0, 1, 2, 3, 4, and 5(the -m flag). Use 1024 samples per pixel. -->
+                <h2>Accumulate</h2>
+                <div class="row row-full">
+                    <span><img src="imgs/4-bunny_m0_A.png">$m=0$</span>
+                    <span><img src="imgs/4-bunny_m1_A.png">$m\in [1]$</span>
+                    <span><img src="imgs/4-bunny_m2_A.png">$m\in [2]$</span>
+                    <span><img src="imgs/4-bunny_m3_A.png">$m\in [3]$</span>
+                    <span><img src="imgs/4-bunny_m4_A.png">$m\in [4]$</span>
+                    <span><img src="imgs/4-bunny_m5_A.png">$m\in [5]$</span>
+                </div>
+
+                <!-- For CBbunny.dae, render the mth bounce of light with max_ray_depth set to 0, 1, 2, 3, 4, and 5 (the -m flag), and isAccumBounces=false.
+                Explain in your writeup what you see for the 2nd and 3rd bounce of light, and how it contributes to the quality of the rendered image compared to rasterization. Use 1024 samples per pixel. -->
+                <h2>Depth</h2>
+                <div class="row row-full">
+                    <span><img src="imgs/4-bunny_m0_L.png">$m=0$</span>
+                    <span><img src="imgs/4-bunny_m1_L.png">$m=1$</span>
+                    <span><img src="imgs/4-bunny_m2_L.png">$m=2$</span>
+                    <span><img src="imgs/4-bunny_m3_L.png">$m=3$</span>
+                    <span><img src="imgs/4-bunny_m4_L.png">$m=4$</span>
+                    <span><img src="imgs/4-bunny_m5_L.png">$m=5$</span>
+                </div>
+
+                <hr style="margin: 2em 0;">
+
+                <!-- Show some images rendered with global (direct and indirect) illumination. Use 1024 samples per pixel. -->
+                <p>Below are renders with both direct and indirect illumination.</p>
+                <div class="row">
+                    <span><img src="imgs/4-CBspheres_lambertian_s1024_l1_m5.png"></span>
+                    <span><img src="imgs/4-blob_s1024_l1_m5.png"></span>
+                </div>
+                <div class="row">
+                    <span><img src="imgs/4-dragon_s1024_l1_m5.png"></span>
+                    <span><img src="imgs/4-bunny_s1024_l1_m5.png"></span>
+                </div>
+
+
+                <!-- For CBbunny.dae, output the Russian Roulette rendering with max_ray_depth set to 0, 1, 2, 3, 4, and 100(the -m flag). Use 1024 samples per pixel. -->
+                <h2>Russian Roulette</h2>
+                <p>
+                    Our choice of $m$ can seem somewhat arbitrary. One way to address this is 'Russian Roulette' where we terminate rays with a set probability $p = 0.35$ making $m$ the maximum depth. Accordingly, we must scale our contribution by $1/p$ to ensure our estimator remains unbiased. Below we show how the rendered image changes as we increase the $m$aximum depth. I've excluded $m=0$ as the zero-bounce image remains the same.
+                </p>
+                <div class="row row-full">
+                    <span><img src="imgs/4-bunny_m1_R.png">$m=1$</span>
+                    <span><img src="imgs/4-bunny_m2_R.png">$m=2$</span>
+                    <span><img src="imgs/4-bunny_m3_R.png">$m=3$</span>
+                    <span><img src="imgs/4-bunny_m4_R.png">$m=4$</span>
+                    <span><img src="imgs/4-bunny_m100_R.png">$m=100$</span>
+                </div>
+
+                <br>
+                <p>
+                    As we can see, the renders appear just as good at a distance but there is apparent graininess visible zoomed in. The bunny was rendered at $s=1024$; the noise is more pronounced as we decrease the number of $s$amples-per-pixel:
+                </p>
+                <!-- Pick one scene and compare rendered views with various sample-per-pixel rates, including at least 1, 2, 4, 8, 16, 64, and 1024. Use 4 light rays. -->
+                <div class="row row-full">
+                    <span><img src="imgs/4-dragon_l4_m100_l1_R.png">$s=1$</span>
+                    <span><img src="imgs/4-dragon_l4_m100_l2_R.png">$s=2$</span>
+                    <span><img src="imgs/4-dragon_l4_m100_l4_R.png">$s=4$</span>
+                    <span><img src="imgs/4-dragon_l4_m100_l8_R.png">$s=8$</span>
+                </div>
+                <div class="row row-full">
+                    <span><img src="imgs/4-dragon_l4_m100_l16_R.png">$s=16$</span>
+                    <span><img src="imgs/4-dragon_l4_m100_s32_R.png">$s=32$</span>
+                    <span><img src="imgs/4-dragon_l4_m100_l64_R.png">$s=64$</span>
+                    <span><img src="imgs/4-dragon_l4_m100_l1024_R.png">$s=1024$</span>
+                </div>
+            </div>
+
+
+
+            <div>
+                <h1>Adaptive Sampling</h1>
+                <!-- Explain adaptive sampling. Walk through your implementation of the adaptive sampling. -->
+                <p>
+                    Instead of having a constant probability of termination, adaptive sampling uses a statistics heuristic to halt early if a pixel's illumination variance is below a threshold. This is done by keeping a running average and variance of a pixel's samples and checking every <code>samplesPerBatch</code> if $1.96 \cdot \sqrt{ {\sigma^2}/ n} \le \texttt{maxTolerance} \cdot \mu$. Intuitively, the <a href="https://en.wikipedia.org/wiki/Standard_error">left term</a> is small (i.e. we may converge) if variance is small or samples $n$ is large. Statistically, our heuristic is based the $z$-score for a 95% confidence interval (giving rise to magic number $1.96$); we default <code>maxTolerance</code> to $0.05$, corresponding to a 5% error.
+                </p>
+                <p>
+                    Adaptive sampling rates are visualized below as a heat map. <i style="color: blue">Colder</i> corresponds to converging quicker, using less bounces, (ironically) accelerating render time.
+                </p>
+
+                <!-- Pick two scenes and render them with at least 2048 samples per pixel. Show a good sampling rate image with clearly visible differences in sampling rate over various regions and pixels. Include both your sample rate image, which shows your how your adaptive sampling changes depending on which part of the image you are rendering, and your noise-free rendered result. Use 1 sample per light and at least 5 for max ray depth. -->
+                <div class="row">
+                    <span><img src="imgs/5-o.png"></span>
+                    <span><img src="imgs/5-o_rate.png"></span>
+                </div>
+                <div class="row">
+                    <span><img src="imgs/5-z.png"></span>
+                    <span><img src="imgs/5-z_rate.png"></span>
+                </div>
+            </div>
+
+        </article>
+
+        <div id="footer">
+            <table id="footerTable">
+                <tr>
+                    <td>$BTC</td>
+                    <td>15adHcuUPLHzVmUqKqgeLfLzvtfD5r7WJ1</td>
+                </tr>
+                <tr>
+                    <td>$XMR</td>
+                    <td>45MaKMYnWBnNWS4rtbrMp8C6wL1B1mguW6AjmJBGqLJkCzVUMuXwamzRfrmiwLw1WrbUptNjY1DoL4Yu4fXqTDAcDEWpuTZ</td>
+                </tr>
+                <tr>
+                    <td>$ETH</td>
+                    <td>0xeeC384Cdef3aD975EdF1D2f6C1dC9a4b1fEEBF74</td>
+                </tr>
+                <tr>
+                    <td id="footerDateYear">2021</td>
+                    <td>Max Vogel</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+</body>
+
+</html>
