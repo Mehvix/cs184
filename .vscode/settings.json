@@ -1,6 +1,5 @@
 {
-    "editor.wordWrap": "off",
-    "diffEditor.wordWrap": "off",
+    "editor.wordWrap": "on",
     "editor.wrappingColumn": 0,
     "html.format.wrapLineLength": 9999,
     "[html]": {

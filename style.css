@@ -1,0 +1,48 @@
+body {
+    max-width: 75em !important;
+}
+
+#footer table td:nth-of-type(2) {
+    max-width: calc(75em - 7ch - 4em - 4em - 1ch);
+}
+
+.right {
+    margin: 1em 0 1em 3ch;
+    float: right;
+}
+
+.left {
+    margin: 1em 3ch 1em 0;
+    float: left;
+}
+
+.vert {
+    display: flex;
+    margin-top: 1em;
+    justify-content: space-between
+}
+
+div.row {
+    display: flex;
+    justify-content: space-between;
+    margin: 0.5em 0;
+    align-items: flex-end;
+    text-align: center;
+}
+
+div.row>* {
+    flex: 1;
+    /* make em all equal width */
+}
+
+div.row>span {
+    margin-top: 0;
+}
+
+div.row>span:not(:first-child) {
+    margin-left: 1em;
+}
+
+div.row.row-full>span:not(:first-child) {
+    margin-left: 2px !important;
+}
