@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <!-- Default Required Resources -->
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=569,maximum-scale=1" />
+    <link rel="alternate" type="application/rss+xml" title="Blog RSS" href="//mehvix.com/posts/rss.xml" />
+    <link href="//mehvix.com/static/css/style.css" type="text/css" rel="stylesheet" />
+    <script src="//mehvix.com/static/js/include.js"></script>
+
+    <!-- HLJS (remove if not used) -->
+    <!-- https://cdnjs.com/libraries/highlight.js -->
+    <!-- <link type="text/css" rel="stylesheet" href="/static/css/atom-one-dark.css" />
+    <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/highlight.min.js" integrity="sha512-MinqHeqca99q5bWxFNQEQpplMBFiUNrEwuuDj2rCSh1DgeeTXUgvgYIHZ1puBS9IKBkdfLMSk/ZWVDasa3Y/2A==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script>
+    hljs.highlightAll()
+    </script> -->
+
+    <!-- MathJax (remove if not used) -->
+    <script type="text/javascript" id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>
+        MathJax = {
+            tex: {
+                inlineMath: [
+                    ["$", "$"],
+                    ["\\(", "\\)"],
+                ],
+            },
+            svg: {
+                fontCache: "global"
+            },
+            loader: {
+                load: ["input/tex", "output/svg"]
+            },
+        };
+    </script>
+
+    <title>Mehvix | CS184 | Cloth Sim</title>
+    <link rel="stylesheet" href="../style.css">
+    <style>
+        :root {
+            --outside-bg-color: #a28ff5;
+        }
+
+        img {
+            border-radius: 2.5px;
+        }
+
+        div.print {
+            color: white;
+            background-color: #363636;
+            border: 2px dashed red;
+            border-radius: 5px;
+            padding: 4px;
+            width: 66%;
+            margin: 0 auto;
+            text-align: center;
+            font-weight: bolder;
+        }
+
+        #sum-row {
+            align-items: center;
+        }
+
+        #sum-row>span:nth-child(2n) {
+            flex-grow: 0;
+            margin: 0 2ch 0 1ch;
+            font-style: unset;
+        }
+
+        #sum-row>span:nth-child(2n+1) {
+            margin: 0;
+        }
+
+        .row span {
+            font-style: italic;
+        }
+
+    </style>
+</head>
+
+<body>
+    <div class="box">
+        <div class="nav">
+            <a href="//www.mehvix.com/">~</a>/<a href="//cs184.mehvix.com/">CS184</a>/<a href="" class="inverse-bg"></a>Cloth Sim</a>
+        </div>
+
+        <article>
+            <div class="print">
+                You are viewing the PDF/print of this webpage. You should go to cs184.mehvix.com/4/ so you can see the animated <code>.gif</code>s
+            </div>
+            <!-- overview: Briefly stated overall purpose/ outline of the project -->
+            <p>
+                In this project, we continue (recall <a href="../3/">last project</a>) exploring physics-based simulations by implementing a cloth simulation. Additionally, we introduce shaders to the scene to give the cloth a more realistic appearance.
+            </p>
+
+            <div>
+                <h1>Masses and springs</h1>
+                <p>
+                    We begin by constructing a cloth as a grid of point masses connected by springs. You can see shearing springs connect diagonally adjacent nodes; however, you cannot see the difference between structural and bending springs -- the former join horizontally and vertically adjacent nodes, while the latter join in same directions but two nodes apart. Moreover, we weaken the bending springs to 20% of the base spring strength.
+                </p>
+                <!-- Take some screenshots of scene/pinned2.json from a viewing angle where you can clearly see the cloth wireframe to show the structure of your point masses and springs. -->
+                <!-- Show us what the wireframe looks like (1) without any shearing constraints, (2) with only shearing constraints, and (3) with all constraints. -->
+                <div class="row">
+                    <span><img src="imgs/1-1.png">All</span>
+                    <span><img src="imgs/1-2.png">Shear</span>
+                    <span><img src="imgs/1-3.png">Structural/bend</span>
+                </div>
+            </div>
+
+            <div>
+                <span class="right" style="width: 40%">
+                    <img src="imgs/2.png">
+                </span>
+                <h1>Simulation via numerical integration</h1>
+                <!-- Show us a screenshot of your shaded cloth from scene/pinned4.json in its final resting state! If you choose to use different parameters than the default ones, please list them. -->
+                <p>
+                    To model the cloth's behavior, we use the <a href="https://en.wikipedia.org/wiki/Verlet_integration">Verlet integration</a> to update the position as $$x_{t+1} = x_t + (1-d) \cdot (x_t - x_{t-1}) + \frac{f}{m} \cdot \Delta t^2$$ where $d$ is the damping factor, $f$ is the force, $m$ is the mass, and $\Delta t$ is the time step. The force is recalculated at each time step, and is the sum of external forces (i.e. gravity) and internal forces (i.e. spring forces, see <a href="https://en.wikipedia.org/wiki/Hooke%27s_law">Hook's law</a>).
+                </p>
+                <p>
+                    <!--
+                    > Describe the effects of changing the spring constant ks; how does the cloth behave from start to rest with a very low ks? A high ks?
+                    > What about for density?
+                    > What about for damping?
+                    > For each of the above, observe any noticeable differences in the cloth compared to the default parameters and show us some screenshots of those interesting differences and describe when they occur.
+                    -->
+                    Below are the effects of changing the spring constant $k_s$, density, and damping. The default values are denoted with `$\bigstar$'. You can see that the spring constant and density are inversely related to the cloth's 'stiffness' while the dampening factor affects how quickly the cloth moves through air.
+                </p>
+                <p>
+                    Low $k_s$ corresponds to loose connections making a flatter sheet; high $k_s$ means stronger bonds and a more rigid cloth. High density results in more mass, causing more pull from gravity fighting the spring forces; low density has the spring force dominating, producing also a relatively flat cloth. It is when internal and external forces are of similar magnitude the masses are able to be suspended as they fold/drape.
+
+                </p>
+                <div class="row">
+                    <span><img src="imgs/2-1-1.png">$k_s=5$</span>
+                    <span><img src="imgs/2-1-2.png">$k_s=100$</span>
+                    <span><img src="imgs/2-1-3.png">$k_s=1,000$</span>
+                    <span><img src="imgs/2-1-4.png">$\bigstar\ k_s=5,000$</span>
+                    <span><img src="imgs/2-1-5.png">$k_s=10,000$</span>
+                </div>
+
+                <p>
+                </p>
+                <div class="row">
+                    <span><img src="imgs/2-2-5.png">$\texttt{density}=10,000$</span>
+                    <span><img src="imgs/2-2-4.png">$\texttt{density}=1,000$</span>
+                    <span><img src="imgs/2-2-3.png">$\texttt{density}=50$</span>
+                    <span><img src="imgs/2-1-4.png">$\bigstar\ \texttt{density}=15$</span>
+                    <span><img src="imgs/2-2-1.png">$\texttt{density}=5$</span>
+                </div>
+
+                <div class="row">
+                    <span><img src="imgs/2-3-1.gif">$\texttt{dampening}=1.0$</span>
+                    <span><img src="imgs/2-3-2.gif">$\texttt{dampening}=0.5$</span>
+                    <span><img src="imgs/2-3-3.gif">$\bigstar\ \texttt{dampening}=0.2$</span>
+                    <span><img src="imgs/2-3-4.gif">$\texttt{dampening}=0.0$</span>
+                </div>
+                <div class="print">
+                    You are viewing the PDF/print of this webpage. You should go to cs184.mehvix.com/4/ so you can see the animated <code>.gif</code>s
+                </div>
+            </div>
+
+            <div>
+                <h1>Handling collisions with other objects</h1>
+                <!-- Show us screenshots of your shaded cloth from scene/sphere.json in its final resting state on the sphere using the default ks = 5000 as well as with ks = 500 and ks = 50000. Describe the differences in the results. -->
+                <div class="row">
+                    <span><img src="imgs/3-1.png">$k_s=500$</span>
+                    <span><img src="imgs/3-2.png">$k_s=5,000$</span>
+                    <span><img src="imgs/3-3.png">$k_s=50,000$</span>
+                </div>
+
+                <!-- Show us a screenshot of your shaded cloth lying peacefully at rest on the plane. If you haven't by now, feel free to express your colorful creativity with the cloth! (You will need to complete the shaders portion first to show custom colors.) -->
+                <span class="right" style="width: 32.5%">
+                    <img src="imgs/3.png">
+                </span>
+                <p>
+                    Next we implement collisions with spheres and planes allowing for interactions with ours mesh. Above you can see the effect of varying $k_s$ with how it falls upon the sphere: larger values lead to stiffness, resulting in fewer but more pronounced folds.
+                </p>
+                <p>
+                    Importantly, to prevent clipping with the plane itself, we add $10^{-4}$ in the direction of the plane's normal vector to the mesh positions.
+                </p>
+            </div>
+
+            <div>
+                <h1>Handling self-collisions</h1>
+
+                <!-- Show us at least 3 screenshots that document how your cloth falls and folds on itself, starting with an early, initial self-collision and ending with the cloth at a more restful state (even if it is still slightly bouncy on the ground). -->
+                <!-- Vary the density as well as ks and describe with words and screenshots how they affect the behavior of the cloth as it falls on itself. -->
+                <p>
+                    We now add self-collisions to the cloth so that it may fold on itself. With high density/low $k_s$, the cloth becomes scrunched as it falls -- the relatively weak internal forces are outweighed and you can see a kind of ripple effect as the cloth falls. Conversely, the cloth resists folding over itself, and may even return to a flat sheet with high enough $k_s$ / low density.
+                </p>
+                <div class="row">
+                    <span><img src="imgs/d1.gif">$\texttt{density}=1$</span>
+                    <span><img src="imgs/d15.gif">$\bigstar\ \texttt{density}=15,\ k_s=5,000$</span>
+                    <span><img src="imgs/d1000.gif">$\texttt{density}=1,000$</span>
+                </div>
+                <div class="row">
+                    <span><img src="imgs/k10000.gif">$k_s=10,000$</span>
+                    <span><img src="imgs/k1000.gif">$k_s=1,000$</span>
+                    <span><img src="imgs/k5.gif">$k_s=5$</span>
+                </div>
+                <div class="print">
+                    You are viewing the PDF/print of this webpage. You should go to cs184.mehvix.com/4/ so you can see the animated <code>.gif</code>s
+                </div>
+            </div>
+
+            <div>
+                <h1>Shaders</h1>
+                <!-- Explain in your own words what is a shader program and how vertex and fragment shaders work together to create lighting and material effects. -->
+                <p>
+                    Shaders are small, isolated programs that run in parallel on GPU and play the role of determining the color of each pixel on the screen. <i>Vertex shaders</i> are run on each vertex of the mesh and are responsible for transforming the vertex's position/normal/tangent from model space to screen space. <i>Fragment shaders</i> are run on each fragment (essentially each pixel) and determine the color to be displayed. It does this by operating on the geometric attributes from the vertex shader and interpolating (i.e. using Barycentric coords) to give the appearance of continuous shading.
+                </p>
+
+                <!-- Explain the Blinn-Phong shading model in your own words.-->
+                <p>
+                    The <a href="https://en.wikipedia.org/wiki/Blinn%E2%80%93Phong_reflection_model">Blinn-Phong shading model</a> simulates the way light interacts with a surface by considering three components: ambient, diffuse, and specular. The ambient component is the directionless, passive light in the scene interacting uniformly across all surfaces; the diffuse component is the light that is scattered in all directions from the surface; the specular component is the shiny portion of reflected light. The model is given by:
+                </p>
+
+                <div class="row" id="sum-row">
+                    <span>Ambient ($k_a=0.1$)<img src="imgs/4-1-1.png">$k_a\mathbf{I}_a$</span>
+                    <span>+</span>
+                    <span>Diffuse ($k_d=1.0$)<img src="imgs/4-1-2.png">$k_d (\mathbf{I} / r^2) \max(0, \mathbf{n} \cdot \mathbf{l})$</span>
+                    <span>+</span>
+                    <span>Specular ($k_a = 0.5,\ p=64$)<img src="imgs/4-1-3.png">$k_s (\mathbf{I} / r^2) \max(0, \mathbf{n} \cdot \mathbf{h})^p$</span>
+                    <span>=</span>
+                    <span>Blinn-Phong Reflection
+                        <img src="imgs/4-1-4.png">
+                        $\mathbf{L}$
+                    </span>
+                </div>
+                <p style="margin-top: 1em">
+                    where $k_{a/d/s}$ is the corresponding coefficients (where diffuse is the 'normalizing' unit), $\mathbf{I}$ is the light intensity, $r$ is the distance from the light source, $\mathbf{n}$ is the surface normal vector, $\mathbf{l}$ is the light vector, $\mathbf{h} = \frac{\mathbf{l} + \mathbf{v}}{||\mathbf{l} + \mathbf{v}||}$ is the half vector, and $p$ is the shininess coefficient. The dot product comes from Labert's cosine law and $\text{ReLU}$ as we only see light that bounces, not that refracts through the surface. Notice that only the specular component depends on $\mathbf{v}$iewing direction.
+                </p>
+
+                <!-- Show a screenshot of bump mapping on the cloth and on the sphere. Show a screenshot of displacement mapping on the sphere. Use the same texture for both renders. Compare the two approaches and resulting renders in your own words.-->
+                <p>
+                    To give the illusion of depth to the mesh based on the texture, we first consider bump mapping: this technique modifies the surface $\mathbf{n}$ormal vector based on the texture's gradient. Displacement mapping, on the other hand, actually perturbs the mesh nodes in the direction of the normal proportional to the texture's value.
+                </p>
+                <div class="row">
+                    <span>Bump<img src="imgs/4-3-1.gif"></span>
+                    <span>Displacement<img src="imgs/4-3-2.gif"></span>
+                </div>
+
+                <!--Compare how your the two shaders react to the sphere by changing the sphere mesh's coarseness by using -o 16 -a 16 and then -o 128 -a 128. -->
+                <div class="row">
+                    <span><img src="imgs/4-4-1.png">Bump 16</span>
+                    <span><img src="imgs/4-4-3.png">Bump 128</span>
+                    <span><img src="imgs/4-4-2.png">Displacement 16</span>
+                    <span><img src="imgs/4-4-4.png">Displacement 128</span>
+                </div>
+                <br>
+                <p>
+                    Above, we show the effect of changing the resolution of the sphere; this is most pronounced in the displacement shader as you can see the sharp angled edges of the sphere.
+                </p>
+
+                <!-- Show a screenshot of your texture mapping shader using your own custom texture by modifying the textures in /textures/. -->
+                <p>
+                    We can introduce watermelon cat to our cloth by mapping the texture to the vertices of the mesh. And can construct a mirror texture: this works by calculating the reflection of the incoming (viewer-to-surface) vector to then sample from the environment cubemap.
+                </p>
+                <div class="row" style="align-items: center">
+                    <span><img src="imgs/wcat.jpeg"></span>
+                    <span><img src="imgs/4-2-1.png"></span>
+                    <span><img src="imgs/4-2-2.png"></span>
+                    <span><img src="imgs/4-2-3.png"></span>
+                </div>
+            </div>
+
+            <!-- Show a screenshot of your mirror shader on the cloth and on the sphere. -->
+            <div class="row">
+                <span><img src="imgs/4-5-1.png"></span>
+                <span><img src="imgs/4-5-2.png"></span>
+                <span><img src="imgs/4-5-3.png"></span>
+            </div>
+        </article>
+
+        <div id="footer">
+            <table id="footerTable">
+                <tr>
+                    <td>$BTC</td>
+                    <td>15adHcuUPLHzVmUqKqgeLfLzvtfD5r7WJ1</td>
+                </tr>
+                <tr>
+                    <td>$XMR</td>
+                    <td>45MaKMYnWBnNWS4rtbrMp8C6wL1B1mguW6AjmJBGqLJkCzVUMuXwamzRfrmiwLw1WrbUptNjY1DoL4Yu4fXqTDAcDEWpuTZ</td>
+                </tr>
+                <tr>
+                    <td>$ETH</td>
+                    <td>0xeeC384Cdef3aD975EdF1D2f6C1dC9a4b1fEEBF74</td>
+                </tr>
+                <tr>
+                    <td id="footerDateYear">2021</td>
+                    <td>Max Vogel</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+</body>
+
+</html>
