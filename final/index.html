@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <!-- Default Required Resources -->
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=569,maximum-scale=1" />
+    <link rel="alternate" type="application/rss+xml" title="Blog RSS" href="//mehvix.com/posts/rss.xml" />
+    <link href="//mehvix.com/static/css/style.css" type="text/css" rel="stylesheet" />
+    <script src="//mehvix.com/static/js/include.js"></script>
+
+    <!-- HLJS (remove if not used) -->
+    <!-- https://cdnjs.com/libraries/highlight.js -->
+    <!-- <link type="text/css" rel="stylesheet" href="/static/css/atom-one-dark.css" />
+    <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/highlight.min.js" integrity="sha512-MinqHeqca99q5bWxFNQEQpplMBFiUNrEwuuDj2rCSh1DgeeTXUgvgYIHZ1puBS9IKBkdfLMSk/ZWVDasa3Y/2A==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script>
+    hljs.highlightAll()
+    </script> -->
+
+    <!-- MathJax (remove if not used) -->
+    <script type="text/javascript" id="MathJax-script" async
+        src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>
+        MathJax = {
+            tex: {
+                inlineMath: [
+                    ["$", "$"],
+                    ["\\(", "\\)"],
+                ],
+                tags: "all",
+            },
+            svg: {
+                fontCache: "global"
+            },
+            loader: {
+                load: ["input/tex", "output/svg"]
+            },
+        };
+    </script>
+
+    <title>Mehvix | CS184 | 2DGS</title>
+    <link rel="stylesheet" href="../style.css">
+    <style>
+        :root {
+            --outside-bg-color: #f3f58f;
+        }
+
+        img {
+            border-radius: 2.5px;
+        }
+
+        h4 {
+            margin-bottom: 0.5em;
+        }
+
+        .right {
+            margin: 1em 0 1em 2ch;
+            float: right;
+        }
+
+        .left {
+            margin: 1em 3ch 1em 0;
+            float: left;
+        }
+
+        .vert {
+            display: flex;
+            margin-top: 1em;
+            justify-content: space-between
+        }
+
+        div.col {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        div.col>span {
+            margin: 1em 0 0 0;
+            font-style: italic;
+            text-align: center;
+        }
+
+        div.row {
+            display: flex;
+            justify-content: space-between;
+            margin: 0.5em 0;
+            align-items: flex-end;
+            text-align: center;
+        }
+
+        div.row>* {
+            flex: 1;
+            /* make em all equal width */
+            min-width: 0;
+            /* allow them to shrink (overflow effects all equally) */
+        }
+
+        div.row>span {
+            margin-top: 0;
+            font-style: italic;
+        }
+
+        div.row>span:not(:first-child) {
+            margin-left: 1em;
+        }
+
+        div.row.row-full>span:not(:first-child) {
+            margin-left: 2px !important;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="box">
+        <div class="nav">
+            <a href="//www.mehvix.com/">~</a>/<a href="//cs184.mehvix.com/">CS184</a>/<a href=""
+                class="inverse-bg"></a>2DGS</a>
+        </div>
+
+        <article>
+            <!-- Abstract -->
+            <p>
+                Novel View Synthesis (NVS) is the task of creating an view from an unseen perspective given a series of
+                images of a scene. Neural Radiance Fields (NeRF) emerged in 2020 as the state-of-the-art technique for
+                this task, taking inspiration from <a href="https://en.wikipedia.org/wiki/Volume_rendering">Volume
+                    rendering</a> and formulating the scene as a continuous 5D function from 3D coordinate and viewing
+                direction to a volume density and view-dependent emitted radiance; however, this implicit representation
+                has its limitations, i.e. failing on large, unbounded scenes and generally being computationally
+                expensive. 3D Gaussian splatting (3DGS) in a more recent approach, explicitly representing the scene
+                with Gaussian which can be quickly <a href="https://en.wikipedia.org/wiki/Rasterisation">rasterized</a>
+                to create novel views in real time.
+                <!-- TODO fin -->
+                Our project focuses on the 2D case, comparing the two methods
+            </p>
+
+            <!-- Technical approach -->
+            <div>
+                <h1>Overview</h1>
+                <!-- summary of your technical approach, techniques used, algorithms implemented, etc. (use references to papers or other resources for further detail). Highlight how your approach varied from the references used (did you implement a subset, or did you change or enhance anything), the unique decisions you made and why. -->
+                <p>
+                    For both approaches to NVS involve rendering an image from a given viewpoint by querying the model
+                    for the predicted colors to be drawn for each pixel in the viewer/camera canvas.
+                </p>
+                <p>
+                    The NeRF volumetric rendering equation is given below: the color $C$ of a ray (cast from viewer
+                    origin through each canvas pixel) is calculated as..
+
+                    $$C = \sum_{i=1}^N T_i (1-\exp(-\sigma_i \delta_i)) \mathbf c_i
+                    \quad\text{with}\quad
+                    T_i = \exp\left(-\sum_{j=1}^{i-1} \sigma_j \delta_j\right)$$
+
+                    ..where $i\in [N]$ samples, every $\delta_i$ interval along the ray, are accumulated. Each 5D
+                    (varying $x/y/z$ coord, fixed $\theta/\phi$ viewing dir) conditions the model's predicted density
+                    $\sigma_i$, transmittance $T_i$, and color $\mathbf c_i$.<br>This can be rewritten as..
+
+                    $$C = \sum_{i=1}^N T_i \alpha_i \mathbf c_i
+                    \quad\text{with}\quad \alpha_i = (1-\exp(-\sigma_i\delta_i))
+                    \quad\text{and} \quad T_i = \prod_{j=1}^{i-1} (1-\alpha_j) \label{2}$$
+
+
+                    ..which now closely resembles the $\alpha$-rendering equation below. For single pixel, we can
+                    collapse $\mathcal N$ overlapping (sorted!) semi-transparent splats into color $C$ as..
+
+                    $$C = \sum_{i\in\mathcal N} \mathbf c_i \alpha_i \prod_{j=1}^{i-1} (1-\alpha_j) \label{3}$$
+
+                    ..where $\alpha_i$ is found by evaluating the 2D Gaussian based on its covariance $\Sigma$ and
+                    scaling by the learned per-point opacity.
+
+                    While the image formulations $\eqref{2}$ and $\eqref{3}$ are equivalent, the actual rendering
+                    processes differ greatly. NeRF involves sampling, susceptible to aliasing and noise issues without a
+                    large number of samples. Splatting explicitly represents the scene, (in theory) allowing fast
+                    rasterization after the blobs are sorted by depth.
+                </p>
+            </div>
+
+
+            <!-- A description of problems encountered and how you tackled them. -->
+            <h2>3DGS Impediments</h2>
+            <div>
+                <p>
+                    Gaussian splatting alone is not quicker than NeRF; the speed up comes from the nuanced,
+                    differentiable rasterization process. To order the objects, first the screen is split into $16\times
+                    16$ tiles and each Gaussian is assigned a key for each tile that it overlaps; this key is
+                    constructed s.t. the first (most significant) bits depend on the covered tile ID with the remaining,
+                    least significant bits based on view depth -- this schema allows the keys to be linearly traversed
+                    after being quickly Radix-sorted in a CUDA kernel. Rasterization itself is parallelized with a
+                    thread per tile; for each pixel in the title, the per-tile Gaussian-list is traversed: Gaussians
+                    that cover the pixel accumulate color and opacity (and the latter is memoized for backprop). This is
+                    not only fast due to sorting with CUDA, but because this process avoids slow, dependent reads --
+                    each thread (tile) just needs to track the start/end positions for the contiguous memory chunk of
+                    candidate Gaussians.
+                </p>
+                <p>
+                    We were not able to take on the challenge of implementing this rasterization process for the 3D
+                    splatting. CUDA is tough. Instead, we chose to focus on the 2D case for both NeRF and GS; while this
+                    does not enable novel view synthesis, it serves as a toy example to show how these techniques
+                    "compress" a scene into an implicit/explicit representation that's differentiable, thus able to
+                    (over)fit by optimizing to a scene.
+                </p>
+            </div>
+
+            <div>
+                <div class="right" style="width: 40%; margin-top: 0">
+                    <div class="col">
+                        <b>Fig. 1: Lego Scene</b>
+                        <span><img src="./imgs/lego_nerf.png">Reference</span>
+                        <span><img src="./imgs/lego_point_cloud_view1.png">Sparse Point Cloud</span>
+                    </div>
+                </div>
+
+                <h2>3DGS Progress</h2>
+                <p>
+                    Before we pivoted to 2D Gaussian Splatting (2DGS) around the time of the checkpoint deliverable, we
+                    initially tried to setup a pipeline for 3DGS.
+
+                    The first step in our 3DGS pipeline is to initialize 3D Gaussians with a sparse point cloud. This is
+                    typically done using <a href="https://colmap.github.io/">COLMAP</a>, which uses
+                    Structure-from-Motion to construct a sparse point clouds for a scene (this itself is a drawback, and
+                    not something that NeRF needs).
+                </p>
+                <p>
+                    One scene that we played around with is the synthetic NeRF Lego Scene that can be found <a
+                        href="https://drive.google.com/drive/folders/1JDdLGDruGNXWnM1eqY1FNL9PlStjaKWi">here</a>. After
+                    downloading this scene locally, we used COLMAP's automatic reconstruction tool that transforms a
+                    folder of input images and produces a sparse point cloud as shown to the left in Figure 1.
+                </p>
+                <p>
+                    <!-- [progress with init and optimization] -->
+                    These points are then used to initialize the 3D Gaussians. The origin is trivial, and covariance
+                    matrix $\Sigma$ can be initialized in a few ways; foremost, $\Sigma$ only has a physical meaning iff
+                    it is positive semi-definite. We need to enforce this constraint when optimizing, motivating
+                    decomposing as $\Sigma = R S S^\top R^\top$ where $R$ is a rotation matrix (i.e. quaternion) and $S$
+                    is a diagonal (scaling) matrix. This can be initialized randomly, and this method works well for
+                    small, unbounded scenes such as the NeRF-synthetic dataset. Alternatively, we can utilizes spatial
+                    information about the closest neighboring points; formally, we initialize the $\Sigma$ as a sphere
+                    with radius equal to the average distance between the point and its 3 nearest neighbors. We
+                    implemented this using a KD-tree data structure to find the $k$-nearest neighbors in $\mathcal
+                    O(\log n)$ time.
+                </p>
+            </div>
+            <div>
+                <h2>2D Gaussian Splatting</h2>
+                <p>
+                    Our implementation of 2DGS follows the original papers approach to the 3D case closely.
+                    Specifically, 2DGS has the following features:
+                </p>
+                <ul>
+                    <li>2D Gaussian Initialization using Covariance Matrices </li>
+                    <li>Adaptive Control of Gaussians (Gaussian Splitting and Cloning)</li>
+                    <li>Weighted Loss Function of L-1 Loss and SSIM (Structural Similarity Index Measure)</li>
+                    <li>2D Gaussian Initialization using Harris Corners and Adaptive Non-Maximum Suppression (ANMS)</li>
+                </ul>
+
+                <h3>Initialization</h3>
+                <p>
+                    There's no clear translation for point initialization (recall 3DGS depended on COLMAP for a sparse
+                    point cloud). For our 2DGS implementation, we chose to initializes the Gaussians using the Harris
+                    Corner Detector combined with Adaptive Non-Maximal Suppression. This allows us to find the most
+                    important points in the image and use them as the centers of our Gaussians.
+                    <!-- The covariance matrix for each Gaussian is initialized as a diagonal matrix with the variance set to the average distance between the corner and its nearest neighbors. -->
+                </p>
+
+                <h4>Harris Corners</h4>
+                <p>
+                    Since keypoints of an image are generally located at corners and sharp edges, we
+                    used the Harris Corner Detector to automatically compute a large set of keypoints. This method takes
+                    in a Black & White image and assigns each pixel an "h" value indicating how relevant the point is.
+                    Therefore, a higher "h" score represents points associated with more relevant corners/edges.
+                </p>
+
+                <h4>Adaptive Non-Maximal Suppression</h4>
+                <p>
+                    Adaptive Non-Maximal Suppression (ANMS) is a technique that we used to filter down the number of
+                    keypoints generated from the Harris Corner Detection Method. This algorithm works by assigning each
+                    keypoint an $r$ score which is defined as:
+
+                    $$\mathcal r_i = \min_j |x_i - x_j| \quad\text{s.t.}\quad f(x_i) \le c_{\text{robust}} \cdot f(x_j),
+                    \ \forall x_j \in I$$
+
+                    This metric takes into account both the distances between keypoints and the outputted strengths of
+                    the key points computed from the Harris Corner method. Finally, ANMS returns the $n$ keypoints with
+                    the largest "r" score! For this project, we set $n=1000$ which corresponds to initializing 1000 2D
+                    Gaussians.
+                </p>
+
+
+                <h3>Adaptive Control of Gaussians</h3>
+
+                <p>
+                    A key feature of our 2DGS implementation is adaptive control of the Gaussian density. In our
+                    training loop, the
+                    optimization of the Gaussian parameters is interleaved with steps that control the desnity of the
+                    Gaussians to better represent/fit our 2D image.
+
+                    Specifically, our code has the following features:
+                <ul>
+                    <li> We define a densification interval set to 300 so that we densify every 300 iterations and
+                        remove any
+                        Gaussians that are essentially transparent ($\alpha < (\epsilon)_{\alpha}$) where $\alpha$
+                            describes the Gaussian's transparency and $(\epsilon)_{\alpha}$ is a threshold set to 0.01
+                            </li>
+                    <li> Our adaptive control of the Gaussians needs to populate empty/under-reconstructed regions.
+                        Therefore, for small Gaussians that are in under-reconstructed regions, we <b>clone</b> the
+                        Gaussian by simply creating a copy of the Gaussian.</li>
+                    <li> Additionally, our adaptive control of the Gaussians is designed to handle cases in which
+                        regions are covered by large Gaussians. Therefore, large Gaussians in regions with high variance
+                        are <b>split</b> into two smaller ones which happens by dividing the Gaussian by a scale factor
+                        of $\phi = 1.6$</li>
+                </ul>
+
+                </p>
+
+
+
+
+                <!-- TensorBoard results showing number of gaussians -->
+
+
+                <h3>Loss Function</h3>
+
+                <p>
+                    <!-- TODO -->
+                    As a recap, 2DGS uses a combined $\mathcal L_1$ and $\mathcal L_{SSIM}$ loss defined as:
+                    $$\mathcal L = (1 - \lambda) \cdot \mathcal L_1 + \lambda \cdot \mathcal L_{SSIM}$$
+
+                <ul>
+                    <li>
+                        L1 loss is a simple and robust metric used to measure the difference between predicted values
+                        and actual values. In the context of Gaussian splatting,
+                        it measures the absolute difference between the rendered image's pixel values and the ground
+                        truth image's pixel values.
+                    </li>
+                    <li>The Structural Similarity Index Measure (SSIM) is a perceptual metric to measure similarity of
+                        two images. Unlike L1 loss that evaluates pixel-wise errors, SSIM considers
+                        changes in structural information, luminance, and contrast.</li>
+                </ul>
+
+                Since the SSIM loss does not have a PyTorch/off-the-shelf implementation, we manually coded up the SSIM
+                metric with the help of <a
+                    href="https://medium.com/srm-mic/all-about-structural-similarity-index-ssim-theory-code-in-pytorch-6551b455541e">this</a>
+                resource.
+
+                </p>
+            </div>
+
+
+            <h2>2D NeRF</h2>
+            <div>
+                <p>
+                    To compare and evaluate our implementation of 2DGS, we use a simple feed-forward, Multi-layer
+                    Perceptron model to overfit to an image. Our network takes in the 2D (x,y) pixel coordinates and
+                    outputs the 3D (RGB) pixel colors for a given image. The corresponding network architecture is shown
+                    below:
+                    <!-- in essence, this is like querying the 3D case on a plane away from the viewer (so all z-depth values are the const; through c2w transform these x/ys are analogous to 3D case where z-value is fixed); there's no sampling here so it is notably faster than 3D -->
+                </p>
+                <div style="background-color: #fff; padding-top: 1em; margin-bottom: 1em">
+                    <img src="./imgs/model-nerf.jpg">
+                </div>
+
+                <div class="right" style="
+                margin-left: 2.5ch;
+                max-width: 50%;
+                padding-right: 4ch;
+                display: flex;
+                justify-content: center;
+                max-height: 4em;
+                align-items: center">
+                    $$PE(x) = \{x\} \cup \bigcup_{i=0}^{L-1} \left\{\sin(2^i\pi x), \cos(2^i\pi x)\right\}\label{pe}$$
+                </div>
+                <p>
+                    MLPs have an inductive bias towards low-frequency responses. This motivates Positional Encoding (PE)
+                    which effectively lifts the input $L$-times into a higher dimensional representation, allowing the
+                    network to more easily differentiate input positions. We use the sinusoidal encoding
+                    function shown in $\eqref{pe}$, mapping $\mathbb R^2$ pixel coordinate to feature space $\mathbb
+                    R^{2 + 4 L}$.
+                </p>
+
+                <p>
+                    For training, we used the Mean Squared Error (MSE) loss function along with the Adam optimizer
+                    initialized with a learning rate of $\eta = 10^{-2}$. After training the model for 1000 epochs, the
+                    resulting image nearly fit our ground truth image. The results of this are shown below:
+                </p>
+                <!-- TODO loss imgs -->
+
+                <p>
+                    Along with MSE, we used the Peak Signal-to-Noise Ratio (PSNR) metric to better measure the fidelity
+                    of the output.
+                    By normalizing the integer images to floats over $[0, 1]$, we can easily compute PSNR as:
+
+                    $$PSNR = 10\ \log_{10} \left(\frac{1}{MSE}\right)$$
+
+                    To directly compare this implementation with 2DGS, we copied over the combined loss metric from 2DGS
+                    and logged the results on TensorBoard. Comparing this approach to 2DGS, we see that
+                </p>
+                <!-- TODO Compare Combined Loss Metric and PSNR -->
+            </div>
+
+
+            <!-- TODO Results -->
+            <!-- Your final images, animations, video of your system (whichever is relevant). You can include results that you think show off what you built but that you did not have time to go over on presentation day. -->
+            <h2>Results</h2>
+            <div>
+                <h3>References (Ground Truth)</h3>
+                <div class="row">
+                    <span><img src="imgs/ref/bunny_global.png">Bunny</span>
+                    <span><img src="imgs/ref/spheres_indirect.png">Indirect</span>
+                    <span><img src="imgs/ref/fox.jpg">Fox</span>
+                    <span><img src="imgs/ref/mikki.jpg">Mikki</span>
+                    <span><img src="imgs/ref/cal.jpg">Cal</span>
+                </div>
+                <!-- Please include in your final deliverable a small clip, gif, movie, or animation of your team's output for the final showcase. -->
+
+            </div>
+
+            <br>
+            <br>
+            <p>---</p>
+            <!-- TODO -->
+            <!-- References -->
+            <h2>References</h2>
+            <ol>
+                <li></li>
+            </ol>
+            <!-- Contributions from each team member; A clear description of the work contributed by each team member. -->
+        </article>
+
+        <div id="footer">
+            <table id="footerTable">
+                <tr>
+                    <td>$BTC</td>
+                    <td>15adHcuUPLHzVmUqKqgeLfLzvtfD5r7WJ1</td>
+                </tr>
+                <tr>
+                    <td>$XMR</td>
+                    <td>45MaKMYnWBnNWS4rtbrMp8C6wL1B1mguW6AjmJBGqLJkCzVUMuXwamzRfrmiwLw1WrbUptNjY1DoL4Yu4fXqTDAcDEWpuTZ
+                    </td>
+                </tr>
+                <tr>
+                    <td>$ETH</td>
+                    <td>0xeeC384Cdef3aD975EdF1D2f6C1dC9a4b1fEEBF74</td>
+                </tr>
+                <tr>
+                    <td id="footerDateYear">2021</td>
+                    <td>Liam Gottesman, Ujjwal Krishnamurthi, Siddharth Nath, Max Vogel</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+</body>
+
+</html>

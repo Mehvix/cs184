@@ -3,6 +3,6 @@
     "editor.wrappingColumn": 0,
     "html.format.wrapLineLength": 9999,
     "[html]": {
-        "editor.defaultFormatter": null
+        // "editor.defaultFormatter": null
     },
 }
