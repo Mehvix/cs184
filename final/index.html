@@ -120,6 +120,11 @@
 
         <article>
             <!-- Abstract -->
+
+            <p> Final Project Video: <a
+                    href="https://drive.google.com/file/d/1RM_Cgg7j0a3RBFPBrDsBX6GlHaxS0nl3/view?usp=sharing">https://tinyurl.com/184finalvideo</a>
+            </p>
+
             <p>
                 Novel View Synthesis (NVS) is the task of creating an view from an unseen perspective given a series of
                 images of a scene. Neural Radiance Fields (NeRF) emerged in 2020 as the state-of-the-art technique for
@@ -242,8 +247,15 @@
             <div>
                 <h2>2D Gaussian Splatting</h2>
                 <p>
-                    Our implementation of 2DGS follows the original papers approach to the 3D case closely.
-                    Specifically, 2DGS has the following features:
+                    Our implementation of 2DGS follows the original papers approach to the 3D case closely. To get
+                    started, we cloned a simpler implementation of 2DGS that we found on github (linked under <a
+                        href="#references">references</a>). This implementation naively used the $L_1$ loss function,
+                    had a random Gaussian initialization, and poorly writted/documented code. Additionally, our starting
+                    point didn't match the paper as accurately as we wanted since many methods in the codebase were
+                    implemented without much attention to detail (incorrect adaptive control, lack of metric
+                    visualizations, hardcoded parameters, and convoluted implementations)
+                    Therefore, in our implementation we focussed on having readable and easily modifiable code along
+                    with more intricate features that follow from the original 3DGS paper:
                 </p>
                 <ul>
                     <li>2D Gaussian Initialization using Covariance Matrices </li>
@@ -255,34 +267,60 @@
                 <h3>Initialization</h3>
                 <p>
                     There's no clear translation for point initialization (recall 3DGS depended on COLMAP for a sparse
-                    point cloud). For our 2DGS implementation, we chose to initializes the Gaussians using the Harris
+                    point cloud). For our 2DGS implementation, we chose to initialize the Gaussians using the Harris
                     Corner Detector combined with Adaptive Non-Maximal Suppression. This allows us to find the most
                     important points in the image and use them as the centers of our Gaussians.
                     <!-- The covariance matrix for each Gaussian is initialized as a diagonal matrix with the variance set to the average distance between the corner and its nearest neighbors. -->
                 </p>
 
                 <h4>Harris Corners</h4>
-                <p>
-                    Since keypoints of an image are generally located at corners and sharp edges, we
-                    used the Harris Corner Detector to automatically compute a large set of keypoints. This method takes
-                    in a Black & White image and assigns each pixel an "h" value indicating how relevant the point is.
-                    Therefore, a higher "h" score represents points associated with more relevant corners/edges.
-                </p>
 
-                <h4>Adaptive Non-Maximal Suppression</h4>
-                <p>
-                    Adaptive Non-Maximal Suppression (ANMS) is a technique that we used to filter down the number of
-                    keypoints generated from the Harris Corner Detection Method. This algorithm works by assigning each
-                    keypoint an $r$ score which is defined as:
+                <div>
 
-                    $$\mathcal r_i = \min_j |x_i - x_j| \quad\text{s.t.}\quad f(x_i) \le c_{\text{robust}} \cdot f(x_j),
-                    \ \forall x_j \in I$$
+                    <p>
+                        Since keypoints of an image are generally located at corners and sharp edges, we
+                        used the Harris Corner Detector to automatically compute a large set of keypoints. This method
+                        takes
+                        in a Black & White image and assigns each pixel an "h" value indicating how relevant the point
+                        is.
+                        Therefore, a higher "h" score represents points associated with more relevant corners/edges.
+                    </p>
 
-                    This metric takes into account both the distances between keypoints and the outputted strengths of
-                    the key points computed from the Harris Corner method. Finally, ANMS returns the $n$ keypoints with
-                    the largest "r" score! For this project, we set $n=1000$ which corresponds to initializing 1000 2D
-                    Gaussians.
-                </p>
+                    <h4>Adaptive Non-Maximal Suppression</h4>
+                    <p>
+                        Adaptive Non-Maximal Suppression (ANMS) is a technique that we used to filter down the number of
+                        keypoints generated from the Harris Corner Detection Method. This algorithm works by assigning
+                        each
+                        keypoint an $r$ score which is defined as:
+
+                        $$\mathcal r_i = \min_j |x_i - x_j| \quad\text{s.t.}\quad f(x_i) \le c_{\text{robust}} \cdot
+                        f(x_j),
+                        \ \forall x_j \in I$$
+
+                        This metric takes into account both the distances between keypoints and the outputted strengths
+                        of
+                        the key points computed from the Harris Corner method. Finally, ANMS returns the $n$ keypoints
+                        with
+                        the largest "r" score! For this project, we set $n=1000$ which corresponds to initializing 1000
+                        2D
+                        Gaussians.
+                    </p>
+
+                    <b>Fig. 2: Sphere Scene Keypoints</b>
+                    <div class="row">
+                        <span><img src="./imgs/harris.jpg"> Harris Corner Keypoints </span>
+                        <span><img src="./imgs/ANMS.jpg"> Reduced Keypoints with ANMS</span>
+                    </div>
+
+                    <p> The figure above shows how the Harris Corner algorithm can be used to generate a large set of
+                        keypoints (this is analogous to the sparse point cloud that is used to initialize 3D Gaussians).
+                        If there are too many Gaussians, we use ANMS to reduce the number of keypoints. While playing
+                        around with 2dgs, we found that initializing 1000-2000 Gaussians is a good amount. However, for
+                        demonstration purposes, we show the results of AMNS with 500 final keypoints. </p>
+
+                </div>
+
+
 
 
                 <h3>Adaptive Control of Gaussians</h3>
@@ -310,6 +348,8 @@
                 </ul>
 
                 </p>
+
+
 
 
 
@@ -391,23 +431,151 @@
                     $$PSNR = 10\ \log_{10} \left(\frac{1}{MSE}\right)$$
 
                     To directly compare this implementation with 2DGS, we copied over the combined loss metric from 2DGS
-                    and logged the results on TensorBoard. Comparing this approach to 2DGS, we see that
+                    and logged the results on TensorBoard. These results can be found below in the <a
+                        href="#results">results</a> section.
                 </p>
-                <!-- TODO Compare Combined Loss Metric and PSNR -->
+
             </div>
 
 
             <!-- TODO Results -->
             <!-- Your final images, animations, video of your system (whichever is relevant). You can include results that you think show off what you built but that you did not have time to go over on presentation day. -->
-            <h2>Results</h2>
+            <h2 id="results">Results</h2>
+
+            <h3> Fox Image </h3>
+            <p>
+                Here are the results of the fox image; this image is a good test for both our 2DGS and NeRF
+                implementation because it contains many intricate high frequency details such as the fox wiskers!
+            </p>
+
             <div>
+                <video controls autoplay style="width: 100%;">
+                    <source src="imgs/fox_2dgs/fox_2dgs.mp4" type="video/mp4">
+                </video>
+            </div>
+
+            <p>
+                The video above shows the process of 2D Gaussian Splatting fitting to the Fox Ground truth image. The
+                reconstructed 2DGS images are shown on the left in comparison to the ground truth image on the right!
+                After 2000 epochs (~23 minutes with Google Colab T4 GPU), we see that the final predicted image
+                looks similar to the ground truth. However, the reconstruction is still noisy and struggles with fitting
+                the high frequency parts of the image which, along with the slow training time, are pitfalls of 2DGS.
+            </p>
+
+            <div>
+                <p>To give a better understanding of the early stages of the optimization process for 2DGS, consider the
+                    results below:</p>
+                <h4> Epochs 0 - 100 (Early stages of training) </h4>
+                <div class="row">
+                    <span><img src="imgs/fox_2dgs/0.jpg"> 0 Epochs (Initialization)</span>
+                    <span><img src="imgs/fox_2dgs/40.jpg">40 Epochs</span>
+                </div>
+                <div class="row">
+                    <span><img src="imgs/fox_2dgs/60.jpg">60 Epochs</span>
+                    <span><img src="imgs/fox_2dgs/100.jpg">100 Epochs</span>
+                </div>
+                <b> Here, we see that after the first 100 epochs or so, the reconstructed image fits the ground truth
+                    image pretty accurately!</b>
+                <!-- Please include in your final deliverable a small clip, gif, movie, or animation of your team's output for the final showcase. -->
+            </div>
+
+            <p>
+                Plotting the number of Gaussians across all 2000 epochs shows the importance of adaptive control. Below,
+                we see that the number of Gaussians increases significantly (through splitting and cloning) to better
+                fit the ground truth image:
+            </p>
+
+            <div>
+                <div class="row">
+                    <span><img src="imgs/fox_2dgs/num_gaussians.png"> The number of Gaussians increases through repeated
+                        splitting and cloning!</span>
+                </div>
+            </div>
+
+
+
+            <hr>
+
+            <p> Now, we compare these results with the NeRF MLP: </p>
+            <div>
+                <div class="row">
+                    <span><img src="imgs/fox_nerf/default_0_prediction.png"> 0 Epochs (Initialization)</span>
+                    <span><img src="imgs/fox_nerf/default_3_prediction.png"> 210 Iterations</span>
+                </div>
+                <div class="row">
+                    <span><img src="imgs/fox_nerf/default_7_prediction.png">490 Iterations </span>
+                    <span><img src="imgs/fox_nerf/default_10_prediction.png">700 Iterations</span>
+                </div>
+                <div class="row">
+                    <span><img src="imgs/fox_nerf/default_14_prediction.png">Finals NeRF Output (1000 Iterations)</span>
+                </div>
+            </div>
+
+            <p>
+                The results of optimizing the NeRF MLP for the fox image are very promising as it converges much quicker
+                than the 2DGS implementation (the final NeRF result above is for 1000 iterations compared to the 2000
+                iteration result from 2DGS). However, this implementation also struggles with optimizing/fitting to the
+                fox image. Although there isn't a significant different in quality between the 2DGS and NeRF results,
+                there is more crosshatching present in the NeRF's predictions compared to the Gaussian Splatting model.
+            </p>
+
+            <p>
+                Using TensorBoard, we were able to log many relevant metrics to better compare these two approaches.
+                Here are some of the comparisons for the Fox image.
+            </p>
+
+            <div>
+                <div class="row">
+                    <span><img src="imgs/fox_2dgs/gs_psnr.png"> 2DGS PSNR</span>
+                    <span><img src="imgs/fox_2dgs/gs_loss.png"> 2DGS Combined Loss</span>
+                </div>
+                <div class="row">
+                    <span><img src="imgs/fox_nerf/nerf_psnr.png"> NeRF PSNR</span>
+                    <span><img src="imgs/fox_nerf/nerf_loss.png"> NeRF Combined Loss</span>
+                </div>
+            </div>
+
+            <p>
+                The graphs above show that 2DGS reaches a higher PSNR score compared to the NeRF implementation. Since a
+                higher PSNR indicates better image quality, this suggests that the 2DGS method produces visually more
+                accurate images compared to NeRF.
+                However, when comparing the weighted $L_1$ and $L_{D-SSIM}$ loss function defined earlier in the writeup
+                we see that the NeRF approach performs better than 2DGS.
+            </p>
+            <p>
+                This shows the importance of having multiple different metrics to compare results.
+            </p>
+
+
+
+
+
+            <hr>
+
+            <h3> Bunny (Global Illumination) </h3>
+
+            <div>
+                <video controls autoplay style="width: 100%;">
+                    <source src="imgs/bunny/bunny_video.mp4" type="video/mp4">
+                </video>
+            </div>
+
+
+            <h3> Spheres (Direct Illumination) </h3>
+
+            <div>
+                <video controls autoplay style="width: 100%;">
+                    <source src="imgs/spheres/spheres_video.mp4" type="video/mp4">
+                </video>
+            </div>
+
+            <div id="references">
                 <h3>References (Ground Truth)</h3>
                 <div class="row">
                     <span><img src="imgs/ref/bunny_global.png">Bunny</span>
-                    <span><img src="imgs/ref/spheres_indirect.png">Indirect</span>
+                    <span><img src="imgs/ref/spheres_indirect.png">Spheres</span>
                     <span><img src="imgs/ref/fox.jpg">Fox</span>
-                    <span><img src="imgs/ref/mikki.jpg">Mikki</span>
-                    <span><img src="imgs/ref/cal.jpg">Cal</span>
+                    <!-- <span><img src="imgs/ref/mikki.jpg">Mikki</span> -->
                 </div>
                 <!-- Please include in your final deliverable a small clip, gif, movie, or animation of your team's output for the final showcase. -->
 
@@ -416,13 +584,46 @@
             <br>
             <br>
             <p>---</p>
-            <!-- TODO -->
-            <!-- References -->
             <h2>References</h2>
             <ol>
-                <li></li>
+                <li> <a href="https://repo-sam.inria.fr/fungraph/3d-gaussian-splatting/">Original 3DGS
+                        implementation</a> </li>
+                <li> Sid's NeRF Implementation <a href="https://inst.eecs.berkeley.edu/~cs180/fa23/hw/proj5/"> (From
+                        CS180 Homework 5) </a> </li>
+                <li> Basic 2DGS Implementations: <a
+                        href="https://github.com/aoru45/Gaussian-Splatting-2D">Implementation 1</a> and <a
+                        href="https://github.com/OutofAi/2D-Gaussian-Splatting">Implementation 2</a> </li>
+                <li> Harris Corner Detection provided as a <a
+                        href="https://inst.eecs.berkeley.edu/~cs180/fa23/hw/proj4/harris.py">resource</a> from CS180
+                    Homework 4B</li>
+                <li> SSIM Loss: <a
+                        href="https://medium.com/srm-mic/all-about-structural-similarity-index-ssim-theory-code-in-pytorch-6551b455541e">Article
+                        & Implementation</a></li>
             </ol>
             <!-- Contributions from each team member; A clear description of the work contributed by each team member. -->
+            <h2>Contributions</h2>
+            <ol>
+                <li> Max proposed the initial project idea of following the 3D Gaussian Splatting paper (linked in the
+                    references above), and he provided resources for the rest of the team to get caught up to
+                    speed. Max explored and researched different 3D Gaussian Splatting implementations and led the way
+                    with formulating the project goals and deliverables outlined in the project proposal. He worked on
+                    constructing the final website as well as building our initial 3D Gaussian Splatting pipeline.</li>
+                <li> Sid helped transition the project towards focussing on implementing 2D Gaussian Splatting. Sid
+                    researched different ways to generate sparse point clouds for 3D Gaussian Splatting using Colmap and
+                    led the way with shifting the project focus to the 2D case (2D Gaussian Splatting) once 3DGS was
+                    determined to be
+                    infeasible. Sid also contributed to the
+                    final website and restructed his old NeRF code from CS 180 for this project. Along with this, Sid helped
+                    with the Checkpoint slides and presentation.</li>
+                <li> Liam helped integrate TensorBoard and generate visuals for the Checkpoint Presentation, Final
+                    Presentation, and Final Website. Along with this, Liam played around with Colmap to generate sparse
+                    point clouds for 3D Gaussian Splatting. Liam added on the the NeRF and 2DGS python notebooks for
+                    TensorBoard integration. </li>
+                <li> Ujjwal helped forming the Checkpoint and Final Presentation along with recording the accompanying
+                    videos. Ujjwal also contributed to the initial 3DGS pipeline that we originally wrote. Along with
+                    this, Ujjwal helped capture different visualizations and graphs needed for the presentations +
+                    website and researched different implementations of 2DGS </li>
+            </ol>
         </article>
 
         <div id="footer">
