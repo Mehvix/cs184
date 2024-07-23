@@ -8,6 +8,7 @@
     <link rel="alternate" type="application/rss+xml" title="Blog RSS" href="//mehvix.com/posts/rss.xml" />
     <link href="//mehvix.com/static/css/style.css" type="text/css" rel="stylesheet" />
     <script src="//mehvix.com/static/js/include.js"></script>
+    <script src="//mehvix.com/static/js/footnote.js"></script>
 
     <!-- HLJS (remove if not used) -->
     <!-- https://cdnjs.com/libraries/highlight.js -->
@@ -42,8 +43,8 @@
         :root {
             --outside-bg-color: #1b63e9;
         }
-
     </style>
+
 </head>
 
 <body>
@@ -57,7 +58,7 @@
                 <h1>Drawing Single-Color Triangles</h1>
                 <p>
                     <!-- Walk through how you rasterize triangles in your own words. -->
-                    Rasterization involves taking a continuous image (i.e. the shapes encoded in an <code>.svg</code> file) and discretizing them into the pixels (i.e. the squares of a grid<sup>0</sup>). Formally, we will be given the vertices $\left\{(x_1,y_1), (x_2,y_2), (x_3,y_3)\right\}$ and color $\mathcal C:=(r,g,b)$ of a triangle<sup>1</sup>. The task is then to determine which pixels reside inside the triangle, and thus should display $\mathcal C$.
+                    Rasterization involves taking a continuous image (i.e. the shapes encoded in an <code>.svg</code> file) and discretizing them into the pixels (i.e. the <span class="footnote" data-footnote='Actually, <a href="http://alvyray.com/Memos/CG/Microsoft/6_pixel.pdf"><i>A Pixel Is</i> Not <i>A Little Square</i></a>'>squares of a grid</span>). Formally, we will be given the vertices $\left\{(x_1,y_1), (x_2,y_2), (x_3,y_3)\right\}$ and color $\mathcal C:=(r,g,b)$ of a <span class="footnote" data-footnote="Why triangles? They are a foundational geometric shape-- any polygon can be decomposed into a set of triangles. Additionally, there are many nice mathematical properties that triangles have, such as linear interpolation rules for color and texture coordinates.">triangle</span>. The task is then to determine which pixels reside inside the triangle, and thus should display $\mathcal C$.
                     <br>
 
                     <!-- Explain how your algorithm is no worse than one that checks each sample within the bounding box of the triangle. -->
@@ -75,13 +76,6 @@
                     <!-- Show a png screenshot of basic/test4.svg with the default viewing parameters and with the pixel inspector centered on an interesting part of the scene. -->
                     These initial results, shown to the right, contain aliasing -- a symptom of discretization, caused by sampling below the <a href="https://en.wikipedia.org/wiki/Nyquist_rate">Nyquist rate</a> characterized by the underlying image. Intuitively, thin slices are like short, high-frequency waves. This can be mitigated by increasing the sampling rate, motivating supersampling.
                 </div>
-
-                ---
-                <p>
-                    <sup>0</sup>: Actually, <a href="http://alvyray.com/Memos/CG/Microsoft/6_pixel.pdf"><i>A Pixel Is</i> Not <i>A Little Square</i></a>.
-                    <br>
-                    <sup>1</sup>: Why triangles? They are the most basic and simple geometric shape-- any polygon can be decomposed into a set of triangles. Additionally, there are many nice mathematical properties that triangles have, such as linear interpolation rules for color and texture coordinates.
-                </p>
             </div>
 
             <div>

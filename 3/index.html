@@ -8,6 +8,7 @@
     <link rel="alternate" type="application/rss+xml" title="Blog RSS" href="//mehvix.com/posts/rss.xml" />
     <link href="//mehvix.com/static/css/style.css" type="text/css" rel="stylesheet" />
     <script src="//mehvix.com/static/js/include.js"></script>
+    <script src="//mehvix.com/static/js/footnote.js"></script>
 
     <!-- HLJS (remove if not used) -->
     <!-- https://cdnjs.com/libraries/highlight.js -->
@@ -120,7 +121,7 @@
 
                 <!-- Compare rendering times on a few scenes with moderately complex geometries with and without BVH acceleration. Present your results in a one-paragraph analysis. -->
                 <p>
-                    Below is the performance of the raytracer with and without BVH acceleration across two simple and four complex scenes. You can see that render times go from an upper bound of minutes down to less than a tenth of a second<sup>1</sup>. Because the BVH culling is able to alleviate most objects before checking for intersection, this average is significantly reduced and is no longer driven by primitive count (rather, the scene geometry).
+                    Below is the performance of the raytracer with and without BVH acceleration across two simple and four complex scenes. You can see that <span class="footnote" data-footnote="For reference, these are times rendering with 8 threads on my Thinkpad P14s laptop.">render times</span> go from an upper bound of minutes down to less than a tenth of a second. Because the BVH culling is able to alleviate most objects before checking for intersection, this average is significantly reduced and is no longer driven by primitive count (rather, the scene geometry).
                 </p>
                 <table id="speed">
                     <tr>
@@ -184,7 +185,6 @@
                         <td>3.333972</td>
                     </tr>
                 </table>
-                <p><sup>1</sup>: For reference, these are times rendering with 8 threads on my Thinkpad P14s laptop.</p>
             </div>
 
             <div>

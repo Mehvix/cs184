@@ -8,6 +8,7 @@
     <link rel="alternate" type="application/rss+xml" title="Blog RSS" href="//mehvix.com/posts/rss.xml" />
     <link href="//mehvix.com/static/css/style.css" type="text/css" rel="stylesheet" />
     <script src="//mehvix.com/static/js/include.js"></script>
+    <script src="//mehvix.com/static/js/footnote.js"></script>
 
     <!-- HLJS (remove if not used) -->
     <!-- https://cdnjs.com/libraries/highlight.js -->
@@ -206,9 +207,7 @@
                     We first calculate and cache the new positions of all the original vertices as $(1-nu)\cdot \text{OG position} + u \cdot \sum^n_i \text{neighbor$_i$ position}$ where $n$ is the vertex degree and $u$ is $3/16$ if $n=3$ and $3/8n$ otherwise. Next, for each edge, we calculate and cache the corresponding new vertex position according to its neighbors: $(3(A+B)+(C+D))/8$ (see averaging rules picture for notation).
                 </p>
                 <p>
-                    Now we actually go over each edge (in any order), splitting it and updating the new vertex cached position according to the edges cached position. We then go over each of these new edges and for those connecting a new and old vertex we flip -- this ensures that we obtain the same triangulation<sup>1</sup>, regardless of the order in which we split edges. Finally, we go over each vertex and update its position according to the cached position.
-                    <hr>
-                    <sup>1</sup>I think this may be a <a href="https://en.wikipedia.org/wiki/Delaunay_triangulation">Delaunay triangulation</a> in that it maximizes the smallest angle present.
+                    Now we actually go over each edge (in any order), splitting it and updating the new vertex cached position according to the edges cached position. We then go over each of these new edges and for those connecting a new and old vertex we flip -- this ensures that we obtain the same <span class="footnote" data-footnote='I think this may be a <a href="https://en.wikipedia.org/wiki/Delaunay_triangulation">Delaunay triangulation</a> in that it maximizes the smallest angle present.'>triangulation</span>, regardless of the order in which we split edges. Finally, we go over each vertex and update its position according to the cached position.
                 </p>
                 <br>
                 <!-- Take some notes, as well as some screenshots, of your observations on how meshes behave after loop subdivision. What happens to sharp corners and edges? Can you reduce this effect by pre-splitting some edges? -->
