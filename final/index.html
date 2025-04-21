@@ -5,9 +5,9 @@
     <!-- Default Required Resources -->
     <meta charset="utf-8" />
     <meta name="viewport" content="width=569,maximum-scale=1" />
-    <link rel="alternate" type="application/rss+xml" title="Blog RSS" href="//mehvix.com/posts/rss.xml" />
-    <link href="//mehvix.com/static/css/style.css" type="text/css" rel="stylesheet" />
-    <script src="//mehvix.com/static/js/include.js"></script>
+    <link rel="alternate" type="application/rss+xml" title="Blog RSS" href="//www.mehvix.com/posts/rss.xml" />
+    <link href="//www.mehvix.com/static/css/style.css" type="text/css" rel="stylesheet" />
+    <script src="//www.mehvix.com/static/js/include.js"></script>
 
     <!-- HLJS (remove if not used) -->
     <!-- https://cdnjs.com/libraries/highlight.js -->
@@ -18,8 +18,7 @@
     </script> -->
 
     <!-- MathJax (remove if not used) -->
-    <script type="text/javascript" id="MathJax-script" async
-        src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script type="text/javascript" id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <script>
         MathJax = {
             tex: {
@@ -108,21 +107,20 @@
         div.row.row-full>span:not(:first-child) {
             margin-left: 2px !important;
         }
+
     </style>
 </head>
 
 <body>
     <div class="box">
         <div class="nav">
-            <a href="//www.mehvix.com/">~</a>/<a href="//cs184.mehvix.com/">CS184</a>/<a href=""
-                class="inverse-bg"></a>2DGS</a>
+            <a href="//www.mehvix.com/">~</a>/<a href="//cs184.mehvix.com/">CS184</a>/<a href="" class="inverse-bg"></a>2DGS</a>
         </div>
 
         <article>
             <!-- Abstract -->
 
-            <p> Final Project Video: <a
-                    href="https://drive.google.com/file/d/1RM_Cgg7j0a3RBFPBrDsBX6GlHaxS0nl3/view?usp=sharing">https://tinyurl.com/184finalvideo</a>
+            <p> Final Project Video: <a href="https://drive.google.com/file/d/1RM_Cgg7j0a3RBFPBrDsBX6GlHaxS0nl3/view?usp=sharing">https://tinyurl.com/184finalvideo</a>
             </p>
 
             <p>
@@ -225,8 +223,7 @@
                     not something that NeRF needs).
                 </p>
                 <p>
-                    One scene that we played around with is the synthetic NeRF Lego Scene that can be found <a
-                        href="https://drive.google.com/drive/folders/1JDdLGDruGNXWnM1eqY1FNL9PlStjaKWi">here</a>. After
+                    One scene that we played around with is the synthetic NeRF Lego Scene that can be found <a href="https://drive.google.com/drive/folders/1JDdLGDruGNXWnM1eqY1FNL9PlStjaKWi">here</a>. After
                     downloading this scene locally, we used COLMAP's automatic reconstruction tool that transforms a
                     folder of input images and produces a sparse point cloud as shown to the left in Figure 1.
                 </p>
@@ -248,8 +245,7 @@
                 <h2>2D Gaussian Splatting</h2>
                 <p>
                     Our implementation of 2DGS follows the original papers approach to the 3D case closely. To get
-                    started, we cloned a simpler implementation of 2DGS that we found on github (linked under <a
-                        href="#references">references</a>). This implementation naively used the $L_1$ loss function,
+                    started, we cloned a simpler implementation of 2DGS that we found on github (linked under <a href="#references">references</a>). This implementation naively used the $L_1$ loss function,
                     had a random Gaussian initialization, and poorly writted/documented code. Additionally, our starting
                     point didn't match the paper as accurately as we wanted since many methods in the codebase were
                     implemented without much attention to detail (incorrect adaptive control, lack of metric
@@ -335,9 +331,7 @@
                 <ul>
                     <li> We define a densification interval set to 300 so that we densify every 300 iterations and
                         remove any
-                        Gaussians that are essentially transparent ($\alpha < (\epsilon)_{\alpha}$) where $\alpha$
-                            describes the Gaussian's transparency and $(\epsilon)_{\alpha}$ is a threshold set to 0.01
-                            </li>
+                        Gaussians that are essentially transparent ($\alpha < (\epsilon)_{\alpha}$) where $\alpha$ describes the Gaussian's transparency and $(\epsilon)_{\alpha}$ is a threshold set to 0.01 </li>
                     <li> Our adaptive control of the Gaussians needs to populate empty/under-reconstructed regions.
                         Therefore, for small Gaussians that are in under-reconstructed regions, we <b>clone</b> the
                         Gaussian by simply creating a copy of the Gaussian.</li>
@@ -377,8 +371,7 @@
                 </ul>
 
                 Since the SSIM loss does not have a PyTorch/off-the-shelf implementation, we manually coded up the SSIM
-                metric with the help of <a
-                    href="https://medium.com/srm-mic/all-about-structural-similarity-index-ssim-theory-code-in-pytorch-6551b455541e">this</a>
+                metric with the help of <a href="https://medium.com/srm-mic/all-about-structural-similarity-index-ssim-theory-code-in-pytorch-6551b455541e">this</a>
                 resource.
 
                 </p>
@@ -431,8 +424,7 @@
                     $$PSNR = 10\ \log_{10} \left(\frac{1}{MSE}\right)$$
 
                     To directly compare this implementation with 2DGS, we copied over the combined loss metric from 2DGS
-                    and logged the results on TensorBoard. These results can be found below in the <a
-                        href="#results">results</a> section.
+                    and logged the results on TensorBoard. These results can be found below in the <a href="#results">results</a> section.
                 </p>
 
             </div>
@@ -590,14 +582,10 @@
                         implementation</a> </li>
                 <li> Sid's <a href="https://colab.research.google.com/drive/19iEV2IjZlqVbgFTkgyTZFHkYpVolfin8?usp=sharing"> NeRF Implementation </a> </li>
                 <li> Our Codebase: <a href="https://drive.google.com/drive/folders/1ps8xDP_Zt1WlbeADqE0XI7zMutxu4nW5?usp=sharing"> Google Drive </a> </li>
-                <li> Basic 2DGS Implementations: <a
-                        href="https://github.com/aoru45/Gaussian-Splatting-2D">Implementation 1</a> and <a
-                        href="https://github.com/OutofAi/2D-Gaussian-Splatting">Implementation 2</a> </li>
-                <li> Harris Corner Detection provided as a <a
-                        href="https://inst.eecs.berkeley.edu/~cs180/fa23/hw/proj4/harris.py">resource</a> from CS180
+                <li> Basic 2DGS Implementations: <a href="https://github.com/aoru45/Gaussian-Splatting-2D">Implementation 1</a> and <a href="https://github.com/OutofAi/2D-Gaussian-Splatting">Implementation 2</a> </li>
+                <li> Harris Corner Detection provided as a <a href="https://inst.eecs.berkeley.edu/~cs180/fa23/hw/proj4/harris.py">resource</a> from CS180
                     Homework 4B</li>
-                <li> SSIM Loss: <a
-                        href="https://medium.com/srm-mic/all-about-structural-similarity-index-ssim-theory-code-in-pytorch-6551b455541e">Article
+                <li> SSIM Loss: <a href="https://medium.com/srm-mic/all-about-structural-similarity-index-ssim-theory-code-in-pytorch-6551b455541e">Article
                         & Implementation</a></li>
             </ol>
             <!-- Contributions from each team member; A clear description of the work contributed by each team member. -->
